@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Calcufolio.Application/Calcufolio.Application.csproj" />
     <Project Path="src/Calcufolio.Domain/Calcufolio.Domain.csproj" />
   </Folder>
 </Solution>
