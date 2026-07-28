@@ -1,0 +1,59 @@
+# Compilations .NET
+[Bb]in/
+[Oo]bj/
+artifacts/
+publish/
+
+# Rider et IntelliJ
+.idea/
+*.sln.iml
+
+# Visual Studio et fichiers utilisateur
+.vs/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+
+# Résultats de tests et couverture
+TestResults/
+coverage/
+coverage.*
+*.trx
+*.coverage
+*.coveragexml
+
+# Paquets
+*.nupkg
+*.snupkg
+packages/
+
+# Journaux d'exécution
+logs/
+*.log
+
+# Bases de données locales
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Configuration locale et secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+secrets.json
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Système
+.DS_Store
+Thumbs.db
+desktop.ini
