@@ -1,27 +1,60 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Calcufolio.Presentation.ViewModels;
 
 public sealed partial class MainViewModel : ViewModelBase
 {
-    public string Expression { get; } = "sin(45°) + √81 × 2";
+    [ObservableProperty]
+    public partial string Expression { get; set; } = string.Empty;
 
-    public string DisplayValue { get; } = "18.7071";
+    [ObservableProperty]
+    public partial string DisplayValue { get; set; } = "0";
 
     public string AngleMode { get; } = "DEG";
 
     public string MemoryStatus { get; } = "M  0";
 
-    public IReadOnlyList<CalculationHistoryEntryViewModel> HistoryEntries { get; } =
-    [
-        new("(18 + 6) ÷ 3", "8"),
-        new("√144 + 2³", "20"),
-        new("cos(60°) × 100", "50"),
-        new("ln(e⁴)", "4"),
-    ];
+    public IReadOnlyList<CalculationHistoryEntryViewModel> HistoryEntries { get; } = [];
 
     [ObservableProperty]
     public partial bool IsStartupToastVisible { get; set; } = true;
+
+    [RelayCommand]
+    private void AppendDigit(string digit)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(digit);
+
+        if (digit.Length != 1 ||
+            !char.IsAsciiDigit(digit[0]))
+        {
+            throw new ArgumentException(
+                "The digit must contain exactly one ASCII numeric character.",
+                nameof(digit));
+        }
+
+        DisplayValue = DisplayValue == "0"
+            ? digit
+            : $"{DisplayValue}{digit}";
+    }
+
+    [RelayCommand]
+    private void AppendDecimalSeparator()
+    {
+        if (!DisplayValue.Contains(
+                '.',
+                StringComparison.Ordinal))
+        {
+            DisplayValue = $"{DisplayValue}.";
+        }
+    }
+
+    [RelayCommand]
+    private void Clear()
+    {
+        Expression = string.Empty;
+        DisplayValue = "0";
+    }
 
     public async Task InitializeAsync()
     {
