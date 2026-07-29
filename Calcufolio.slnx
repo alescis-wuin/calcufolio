@@ -3,5 +3,6 @@
     <Project Path="src/Calcufolio.Application/Calcufolio.Application.csproj" />
     <Project Path="src/Calcufolio.Domain/Calcufolio.Domain.csproj" />
     <Project Path="src/Calcufolio.Infrastructure/Calcufolio.Infrastructure.csproj" />
+    <Project Path="src/Calcufolio.Presentation/Calcufolio.Presentation.csproj" />
   </Folder>
 </Solution>
