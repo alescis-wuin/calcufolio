@@ -3,7 +3,10 @@ set -Eeuo pipefail
 
 SCRIPT_DIRECTORY="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIRECTORY
-REPOSITORY_ROOT="$(git -C "$SCRIPT_DIRECTORY" rev-parse --show-toplevel)"
+REPOSITORY_ROOT="$(
+    cd -- "$SCRIPT_DIRECTORY/../.." &&
+        pwd
+)"
 readonly REPOSITORY_ROOT
 readonly COMMON_SCRIPT="$REPOSITORY_ROOT/scripts/lib/common.sh"
 readonly BASE_REF="${BASE_REF:-origin/develop}"

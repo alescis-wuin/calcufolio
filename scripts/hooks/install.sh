@@ -8,7 +8,8 @@ SCRIPT_DIRECTORY="$(
 readonly SCRIPT_DIRECTORY
 
 REPOSITORY_ROOT="$(
-    git -C "$SCRIPT_DIRECTORY" rev-parse --show-toplevel
+    cd -- "$SCRIPT_DIRECTORY/../.." &&
+        pwd
 )"
 readonly REPOSITORY_ROOT
 
