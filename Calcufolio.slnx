@@ -5,4 +5,7 @@
     <Project Path="src/Calcufolio.Infrastructure/Calcufolio.Infrastructure.csproj" />
     <Project Path="src/Calcufolio.Presentation/Calcufolio.Presentation.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Calcufolio.Domain.Tests/Calcufolio.Domain.Tests.csproj" />
+  </Folder>
 </Solution>
