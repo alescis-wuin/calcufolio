@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Calcufolio.Domain.Tests/Calcufolio.Domain.Tests.csproj" />
+    <Project Path="tests/Calcufolio.Presentation.Tests/Calcufolio.Presentation.Tests.csproj" />
   </Folder>
 </Solution>

@@ -84,68 +84,122 @@
                 RowSpacing="8"
                 ColumnSpacing="8">
 
-            <Button Grid.Row="0" Grid.Column="0" Classes="calc-key memory-key" Content="MC" />
-            <Button Grid.Row="0" Grid.Column="1" Classes="calc-key memory-key" Content="MR" />
-            <Button Grid.Row="0" Grid.Column="2" Classes="calc-key memory-key" Content="M+" />
-            <Button Grid.Row="0" Grid.Column="3" Classes="calc-key memory-key" Content="M−" />
-            <Button Grid.Row="0" Grid.Column="4" Classes="calc-key memory-key" Content="DEG" />
+            <Button Grid.Row="0" Grid.Column="0" Classes="calc-key memory-key"
+                    Content="MC" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="1" Classes="calc-key memory-key"
+                    Content="MR" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="2" Classes="calc-key memory-key"
+                    Content="M+" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="3" Classes="calc-key memory-key"
+                    Content="M−" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="4" Classes="calc-key memory-key"
+                    Content="DEG" IsEnabled="False" />
 
-            <Button Grid.Row="1" Grid.Column="0" Classes="calc-key scientific-key" Content="sin" />
-            <Button Grid.Row="1" Grid.Column="1" Classes="calc-key scientific-key" Content="cos" />
-            <Button Grid.Row="1" Grid.Column="2" Classes="calc-key scientific-key" Content="tan" />
-            <Button Grid.Row="1" Grid.Column="3" Classes="calc-key scientific-key" Content="ln" />
-            <Button Grid.Row="1" Grid.Column="4" Classes="calc-key scientific-key" Content="log" />
+            <Button Grid.Row="1" Grid.Column="0" Classes="calc-key scientific-key"
+                    Content="sin" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="1" Classes="calc-key scientific-key"
+                    Content="cos" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="2" Classes="calc-key scientific-key"
+                    Content="tan" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="ln" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="4" Classes="calc-key scientific-key"
+                    Content="log" IsEnabled="False" />
 
-            <Button Grid.Row="2" Grid.Column="0" Classes="calc-key scientific-key" Content="π" />
-            <Button Grid.Row="2" Grid.Column="1" Classes="calc-key scientific-key" Content="e" />
-            <Button Grid.Row="2" Grid.Column="2" Classes="calc-key scientific-key" Content="x²" />
-            <Button Grid.Row="2" Grid.Column="3" Classes="calc-key scientific-key" Content="√x" />
-            <Button Grid.Row="2" Grid.Column="4" Classes="calc-key scientific-key" Content="xʸ" />
+            <Button Grid.Row="2" Grid.Column="0" Classes="calc-key scientific-key"
+                    Content="π" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="1" Classes="calc-key scientific-key"
+                    Content="e" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="2" Classes="calc-key scientific-key"
+                    Content="x²" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="√x" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="4" Classes="calc-key scientific-key"
+                    Content="xʸ" IsEnabled="False" />
 
-            <Button Grid.Row="3" Grid.Column="0" Classes="calc-key action-key" Content="AC" />
-            <Button Grid.Row="3" Grid.Column="1" Classes="calc-key action-key" Content="⌫" />
-            <Button Grid.Row="3" Grid.Column="2" Classes="calc-key action-key" Content="(" />
-            <Button Grid.Row="3" Grid.Column="3" Classes="calc-key action-key" Content=")" />
-            <Button Grid.Row="3" Grid.Column="4" Classes="calc-key operator-key" Content="÷" />
+            <Button Grid.Row="3" Grid.Column="0"
+                    Classes="calc-key action-key"
+                    Content="AC"
+                    Command="{Binding ClearCommand}" />
+            <Button Grid.Row="3" Grid.Column="1" Classes="calc-key action-key"
+                    Content="⌫" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="2" Classes="calc-key action-key"
+                    Content="(" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="3" Classes="calc-key action-key"
+                    Content=")" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="÷"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="÷" />
 
-            <Button Grid.Row="4" Grid.Column="0" Classes="calc-key number-key" Content="7" />
-            <Button Grid.Row="4" Grid.Column="1" Classes="calc-key number-key" Content="8" />
-            <Button Grid.Row="4" Grid.Column="2" Classes="calc-key number-key" Content="9" />
-            <Button Grid.Row="4" Grid.Column="3" Classes="calc-key scientific-key" Content="%" />
-            <Button Grid.Row="4" Grid.Column="4" Classes="calc-key operator-key" Content="×" />
+            <Button Grid.Row="4" Grid.Column="0" Classes="calc-key number-key"
+                    Content="7" Command="{Binding AppendDigitCommand}" CommandParameter="7" />
+            <Button Grid.Row="4" Grid.Column="1" Classes="calc-key number-key"
+                    Content="8" Command="{Binding AppendDigitCommand}" CommandParameter="8" />
+            <Button Grid.Row="4" Grid.Column="2" Classes="calc-key number-key"
+                    Content="9" Command="{Binding AppendDigitCommand}" CommandParameter="9" />
+            <Button Grid.Row="4" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="%" IsEnabled="False" />
+            <Button Grid.Row="4" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="×"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="×" />
 
-            <Button Grid.Row="5" Grid.Column="0" Classes="calc-key number-key" Content="4" />
-            <Button Grid.Row="5" Grid.Column="1" Classes="calc-key number-key" Content="5" />
-            <Button Grid.Row="5" Grid.Column="2" Classes="calc-key number-key" Content="6" />
-            <Button Grid.Row="5" Grid.Column="3" Classes="calc-key scientific-key" Content="1/x" />
-            <Button Grid.Row="5" Grid.Column="4" Classes="calc-key operator-key" Content="−" />
+            <Button Grid.Row="5" Grid.Column="0" Classes="calc-key number-key"
+                    Content="4" Command="{Binding AppendDigitCommand}" CommandParameter="4" />
+            <Button Grid.Row="5" Grid.Column="1" Classes="calc-key number-key"
+                    Content="5" Command="{Binding AppendDigitCommand}" CommandParameter="5" />
+            <Button Grid.Row="5" Grid.Column="2" Classes="calc-key number-key"
+                    Content="6" Command="{Binding AppendDigitCommand}" CommandParameter="6" />
+            <Button Grid.Row="5" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="1/x" IsEnabled="False" />
+            <Button Grid.Row="5" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="−"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="−" />
 
-            <Button Grid.Row="6" Grid.Column="0" Classes="calc-key number-key" Content="1" />
-            <Button Grid.Row="6" Grid.Column="1" Classes="calc-key number-key" Content="2" />
-            <Button Grid.Row="6" Grid.Column="2" Classes="calc-key number-key" Content="3" />
-            <Button Grid.Row="6" Grid.Column="3" Classes="calc-key scientific-key" Content="±" />
-            <Button Grid.Row="6" Grid.Column="4" Classes="calc-key operator-key" Content="+" />
+            <Button Grid.Row="6" Grid.Column="0" Classes="calc-key number-key"
+                    Content="1" Command="{Binding AppendDigitCommand}" CommandParameter="1" />
+            <Button Grid.Row="6" Grid.Column="1" Classes="calc-key number-key"
+                    Content="2" Command="{Binding AppendDigitCommand}" CommandParameter="2" />
+            <Button Grid.Row="6" Grid.Column="2" Classes="calc-key number-key"
+                    Content="3" Command="{Binding AppendDigitCommand}" CommandParameter="3" />
+            <Button Grid.Row="6" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="±" IsEnabled="False" />
+            <Button Grid.Row="6" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="+"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="+" />
 
             <Button Grid.Row="7"
                     Grid.Column="0"
                     Grid.ColumnSpan="2"
                     Classes="calc-key number-key"
-                    Content="0" />
+                    Content="0"
+                    Command="{Binding AppendDigitCommand}"
+                    CommandParameter="0" />
 
             <Button Grid.Row="7"
                     Grid.Column="2"
                     Classes="calc-key number-key"
-                    Content="." />
+                    Content="."
+                    Command="{Binding AppendDecimalSeparatorCommand}" />
 
             <Button Grid.Row="7"
                     Grid.Column="3"
                     Classes="calc-key scientific-key"
-                    Content="ANS" />
+                    Content="ANS"
+                    IsEnabled="False" />
 
             <Button Grid.Row="7"
                     Grid.Column="4"
                     Classes="calc-key equals-key"
-                    Content="=" />
+                    Content="="
+                    IsEnabled="False" />
           </Grid>
         </Grid>
       </Border>
@@ -213,12 +267,12 @@
                    VerticalAlignment="Center" />
 
         <StackPanel Spacing="2">
-          <TextBlock Text="Keyboard ready"
+          <TextBlock Text="Basic controls ready"
                      FontSize="16"
                      FontWeight="Bold"
                      Foreground="{DynamicResource DarkTextBrush}" />
 
-          <TextBlock Text="Numeric keypad and scientific shortcuts are available."
+          <TextBlock Text="Digits, decimal input, clear, and operators are available."
                      MaxWidth="260"
                      FontSize="13"
                      Foreground="{DynamicResource DarkTextBrush}"
