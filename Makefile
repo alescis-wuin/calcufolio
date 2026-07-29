@@ -8,27 +8,23 @@ SOLUTION := $(ROOT)/Calcufolio.slnx
 PRESENTATION_PROJECT := $(ROOT)/src/Calcufolio.Presentation/Calcufolio.Presentation.csproj
 COMMON_SCRIPT := $(ROOT)/scripts/lib/common.sh
 HOOK_INSTALLER := $(ROOT)/scripts/hooks/install.sh
+CHECKS_DIRECTORY := $(ROOT)/scripts/checks
 
 CONFIGURATION ?= Debug
+BASE_REF ?= origin/develop
 
 .PHONY: \
-	help \
-	doctor \
-	hooks-install \
-	hooks-check \
-	clean \
-	restore \
-	build \
-	rebuild \
-	run \
-	test \
-	status
+	help doctor hooks-install hooks-check \
+	clean restore build rebuild run test status \
+	git-check branch-check staged syntax format format-check lint audit \
+	signatures linear-history verify-fast verify
 
 help: ## Show the available commands
 	@printf '\nAvailable commands:\n\n'
 	@awk 'BEGIN { FS = ":.*## " } /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@printf '\nOptional variables:\n\n'
-	@printf '  CONFIGURATION=Debug|Release\n\n'
+	@printf '  CONFIGURATION=Debug|Release\n'
+	@printf '  BASE_REF=origin/develop\n\n'
 
 doctor: ## Audit the local development environment
 	@source "$(COMMON_SCRIPT)"
@@ -59,8 +55,7 @@ hooks-check: ## Verify the repository Git hooks for this worktree
 clean: ## Remove .NET build outputs
 	@source "$(COMMON_SCRIPT)"
 	section "Cleaning solution"
-	dotnet clean "$(SOLUTION)" \
-		--configuration "$(CONFIGURATION)"
+	dotnet clean "$(SOLUTION)" --configuration "$(CONFIGURATION)"
 	success "Solution cleaned."
 
 restore: ## Restore NuGet dependencies
@@ -110,3 +105,54 @@ test: build ## Build and run all unit tests
 
 status: ## Display the concise Git status
 	@git status --short
+
+git-check: ## Inspect staged changes and repository status
+	@source "$(COMMON_SCRIPT)"
+	section "Staged diff validation"
+	GIT_PAGER=cat git diff --cached --check
+	GIT_PAGER=cat git diff --cached --stat
+	GIT_PAGER=cat git diff --cached
+	git status --short
+	success "Git inspection completed."
+
+branch-check: ## Enforce work branch naming and protection rules
+	@"$(CHECKS_DIRECTORY)/branch-policy.sh"
+
+staged: ## Validate staged file safety
+	@"$(CHECKS_DIRECTORY)/staged-files.sh"
+
+syntax: ## Validate Bash, JSON, XML, and Makefile syntax
+	@"$(CHECKS_DIRECTORY)/syntax.sh"
+
+format: restore ## Apply .NET formatting and analyzer fixes
+	@source "$(COMMON_SCRIPT)"
+	section "Applying .NET formatting"
+	dotnet format "$(SOLUTION)" --no-restore
+	success "Formatting completed."
+
+format-check: restore ## Verify .NET formatting without modifying files
+	@source "$(COMMON_SCRIPT)"
+	section "Verifying .NET formatting"
+	dotnet format "$(SOLUTION)" --verify-no-changes --no-restore
+	success "Formatting verification completed."
+
+lint: ## Run ShellCheck on repository shell files
+	@"$(CHECKS_DIRECTORY)/lint.sh"
+
+audit: ## Audit direct and transitive NuGet vulnerabilities
+	@"$(CHECKS_DIRECTORY)/vulnerabilities.sh"
+
+signatures: ## Verify signatures of branch commits
+	@BASE_REF="$(BASE_REF)" "$(CHECKS_DIRECTORY)/signatures.sh"
+
+linear-history: ## Reject merge commits introduced by the work branch
+	@BASE_REF="$(BASE_REF)" "$(CHECKS_DIRECTORY)/linear-history.sh"
+
+verify-fast: ## Run fast checks suitable before a commit
+	@$(MAKE) --no-print-directory \
+		branch-check staged syntax format-check
+
+verify: ## Run the complete local quality gate
+	@$(MAKE) --no-print-directory \
+		branch-check clean restore build test \
+		syntax lint format-check audit signatures linear-history
