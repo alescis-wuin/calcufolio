@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Calcufolio.Application/Calcufolio.Application.csproj" />
     <ProjectReference Include="../Calcufolio.Domain/Calcufolio.Domain.csproj" />
   </ItemGroup>
 

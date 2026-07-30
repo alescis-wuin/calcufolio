@@ -15,7 +15,7 @@ public sealed class CalculationEngine : ICalculationEngine
             rightOperand,
             nameof(rightOperand));
 
-        return operation switch
+        double result = operation switch
         {
             BinaryOperator.Add =>
                 leftOperand + rightOperand,
@@ -34,6 +34,14 @@ public sealed class CalculationEngine : ICalculationEngine
                 operation,
                 "The binary operator is not supported."),
         };
+
+        if (!double.IsFinite(result))
+        {
+            throw new OverflowException(
+                "The calculation result is outside the supported numeric range.");
+        }
+
+        return result;
     }
 
     private static double Divide(

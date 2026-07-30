@@ -68,6 +68,21 @@ public sealed class CalculationEngineTests
     }
 
     [Fact]
+    public void CalculateThrowsWhenResultIsNotFinite()
+    {
+        OverflowException exception =
+            Assert.Throws<OverflowException>(
+                () => _engine.Calculate(
+                    double.MaxValue,
+                    BinaryOperator.Multiply,
+                    2.0));
+
+        Assert.Equal(
+            "The calculation result is outside the supported numeric range.",
+            exception.Message);
+    }
+
+    [Fact]
     public void CalculateThrowsForUnsupportedOperator()
     {
         BinaryOperator unsupportedOperator =
