@@ -7,7 +7,8 @@ public sealed class MainViewModelOperatorTests
     [Fact]
     public void SelectOperatorCapturesLeftOperandAndUpdatesExpression()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("1");
         viewModel.AppendDigitCommand.Execute("2");
@@ -25,7 +26,8 @@ public sealed class MainViewModelOperatorTests
     [Fact]
     public void AppendDigitAfterOperatorStartsRightOperand()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("1");
         viewModel.AppendDigitCommand.Execute("2");
@@ -44,7 +46,8 @@ public sealed class MainViewModelOperatorTests
     [Fact]
     public void AppendDecimalSeparatorAfterOperatorStartsFractionalOperand()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("8");
         viewModel.SelectOperatorCommand.Execute("÷");
@@ -63,7 +66,8 @@ public sealed class MainViewModelOperatorTests
     [Fact]
     public void SelectingOperatorAgainReplacesPendingOperator()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("4");
         viewModel.AppendDigitCommand.Execute("2");
@@ -82,7 +86,8 @@ public sealed class MainViewModelOperatorTests
     [Fact]
     public void ClearResetsPendingOperatorState()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("9");
         viewModel.SelectOperatorCommand.Execute("−");
@@ -104,7 +109,8 @@ public sealed class MainViewModelOperatorTests
     [InlineData("/")]
     public void SelectOperatorRejectsUnsupportedSymbol(string operatorSymbol)
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         ArgumentException exception =
             Assert.Throws<ArgumentException>(

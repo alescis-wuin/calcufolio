@@ -7,7 +7,8 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void InitialStateShowsZeroAndNoExpression()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         Assert.Equal(
             "0",
@@ -23,7 +24,8 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void AppendDigitReplacesInitialZero()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("7");
 
@@ -35,7 +37,8 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void AppendDigitBuildsMultiDigitValue()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("1");
         viewModel.AppendDigitCommand.Execute("2");
@@ -49,7 +52,8 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void AppendDigitDoesNotCreateLeadingZeroes()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("0");
         viewModel.AppendDigitCommand.Execute("0");
@@ -63,7 +67,8 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void AppendDecimalSeparatorCreatesFractionalInput()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDecimalSeparatorCommand.Execute(null);
         viewModel.AppendDigitCommand.Execute("5");
@@ -76,7 +81,8 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void AppendDecimalSeparatorIsIgnoredWhenAlreadyPresent()
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         viewModel.AppendDigitCommand.Execute("1");
         viewModel.AppendDecimalSeparatorCommand.Execute(null);
@@ -91,10 +97,10 @@ public sealed class MainViewModelInputTests
     [Fact]
     public void ClearResetsDisplayAndExpression()
     {
-        MainViewModel viewModel = new()
-        {
-            Expression = "12 +",
-        };
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
+
+        viewModel.Expression = "12 +";
 
         viewModel.AppendDigitCommand.Execute("8");
         viewModel.ClearCommand.Execute(null);
@@ -114,7 +120,8 @@ public sealed class MainViewModelInputTests
     [InlineData("x")]
     public void AppendDigitRejectsInvalidInput(string digit)
     {
-        MainViewModel viewModel = new();
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
 
         ArgumentException exception =
             Assert.Throws<ArgumentException>(

@@ -16,10 +16,6 @@
         Background="{DynamicResource AppBackgroundBrush}"
         Title="Calcufolio">
 
-  <Design.DataContext>
-    <vm:MainViewModel />
-  </Design.DataContext>
-
   <Grid Margin="22">
 
     <Grid ColumnDefinitions="7*,16,3*">
@@ -199,7 +195,7 @@
                     Grid.Column="4"
                     Classes="calc-key equals-key"
                     Content="="
-                    IsEnabled="False" />
+                    Command="{Binding EvaluateCommand}" />
           </Grid>
         </Grid>
       </Border>
@@ -267,12 +263,12 @@
                    VerticalAlignment="Center" />
 
         <StackPanel Spacing="2">
-          <TextBlock Text="Basic controls ready"
+          <TextBlock Text="Basic calculator ready"
                      FontSize="16"
                      FontWeight="Bold"
                      Foreground="{DynamicResource DarkTextBrush}" />
 
-          <TextBlock Text="Digits, decimal input, clear, and operators are available."
+          <TextBlock Text="Binary operations, evaluation, error recovery, and history are available."
                      MaxWidth="260"
                      FontSize="13"
                      Foreground="{DynamicResource DarkTextBrush}"
