@@ -1,0 +1,113 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Calcufolio.Presentation.App"
+             RequestedThemeVariant="Dark">
+
+  <Application.Resources>
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0B1020" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#151C36" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#1D2749" />
+    <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#35416A" />
+
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F7F9FF" />
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A9B3D0" />
+    <SolidColorBrush x:Key="DarkTextBrush" Color="#10152A" />
+
+    <SolidColorBrush x:Key="CyanBrush" Color="#3DDCFF" />
+    <SolidColorBrush x:Key="MagentaBrush" Color="#F05AC8" />
+    <SolidColorBrush x:Key="AmberBrush" Color="#FFC857" />
+    <SolidColorBrush x:Key="GreenBrush" Color="#62E6A7" />
+
+    <SolidColorBrush x:Key="NumberKeyBrush" Color="#29345F" />
+    <SolidColorBrush x:Key="MemoryKeyBrush" Color="#394676" />
+    <SolidColorBrush x:Key="ScientificKeyBrush" Color="#13697B" />
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="28" />
+    </Style>
+
+    <Style Selector="Border.display-card">
+      <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CyanBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="22" />
+    </Style>
+
+    <Style Selector="Border.status-chip">
+      <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Padding" Value="14,8" />
+    </Style>
+
+    <Style Selector="Border.history-entry">
+      <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+      <Setter Property="CornerRadius" Value="18" />
+      <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <Style Selector="Button.calc-key">
+      <Setter Property="MinHeight" Value="48" />
+      <Setter Property="Padding" Value="6" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Button.calc-key:disabled">
+      <Setter Property="Opacity" Value="0.42" />
+    </Style>
+
+    <Style Selector="Button.number-key">
+      <Setter Property="Background" Value="{DynamicResource NumberKeyBrush}" />
+    </Style>
+
+    <Style Selector="Button.memory-key">
+      <Setter Property="Background" Value="{DynamicResource MemoryKeyBrush}" />
+      <Setter Property="FontSize" Value="17" />
+    </Style>
+
+    <Style Selector="Button.scientific-key">
+      <Setter Property="Background" Value="{DynamicResource ScientificKeyBrush}" />
+    </Style>
+
+    <Style Selector="Button.operator-key">
+      <Setter Property="Background" Value="{DynamicResource MagentaBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DarkTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.action-key">
+      <Setter Property="Background" Value="{DynamicResource AmberBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DarkTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.equals-key">
+      <Setter Property="Background" Value="{DynamicResource GreenBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DarkTextBrush}" />
+      <Setter Property="FontSize" Value="22" />
+    </Style>
+
+    <Style Selector="Border.toast">
+      <Setter Property="Background" Value="{DynamicResource GreenBrush}" />
+      <Setter Property="BorderBrush" Value="#B9FFDB" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="18" />
+      <Setter Property="Padding" Value="18,14" />
+    </Style>
+  </Application.Styles>
+
+</Application>

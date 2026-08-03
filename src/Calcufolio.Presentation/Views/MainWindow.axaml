@@ -1,0 +1,281 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Calcufolio.Presentation.ViewModels"
+        x:Class="Calcufolio.Presentation.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        mc:Ignorable="d"
+        d:DesignWidth="1180"
+        d:DesignHeight="880"
+        Width="1180"
+        Height="880"
+        MinWidth="960"
+        MinHeight="720"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Title="Calcufolio">
+
+  <Grid Margin="22">
+
+    <Grid ColumnDefinitions="7*,16,3*">
+
+      <Border Grid.Column="0"
+              Classes="card"
+              Padding="18">
+
+        <Grid RowDefinitions="Auto,14,*">
+
+          <Border Classes="display-card"
+                  Padding="18">
+
+            <Grid RowDefinitions="Auto,Auto"
+                  ColumnDefinitions="Auto,*">
+
+              <StackPanel Grid.Row="0"
+                          Grid.Column="0"
+                          Orientation="Horizontal"
+                          VerticalAlignment="Top"
+                          Spacing="8">
+
+                <Border Classes="status-chip">
+                  <TextBlock Text="{Binding AngleMode}"
+                             FontSize="14"
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource CyanBrush}" />
+                </Border>
+
+                <Border Classes="status-chip">
+                  <TextBlock Text="{Binding MemoryStatus}"
+                             FontSize="14"
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource GreenBrush}" />
+                </Border>
+              </StackPanel>
+
+              <TextBlock Grid.Row="0"
+                         Grid.Column="1"
+                         Margin="16,0,0,0"
+                         Text="{Binding Expression}"
+                         FontSize="19"
+                         Foreground="{DynamicResource SecondaryTextBrush}"
+                         TextAlignment="Right"
+                         TextTrimming="CharacterEllipsis" />
+
+              <TextBlock Grid.Row="1"
+                         Grid.ColumnSpan="2"
+                         Margin="0,12,0,0"
+                         Text="{Binding DisplayValue}"
+                         FontSize="50"
+                         FontWeight="Bold"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
+                         TextAlignment="Right"
+                         TextTrimming="CharacterEllipsis" />
+            </Grid>
+          </Border>
+
+          <Grid Grid.Row="2"
+                RowDefinitions="*,*,*,*,*,*,*,*"
+                ColumnDefinitions="*,*,*,*,*"
+                RowSpacing="8"
+                ColumnSpacing="8">
+
+            <Button Grid.Row="0" Grid.Column="0" Classes="calc-key memory-key"
+                    Content="MC" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="1" Classes="calc-key memory-key"
+                    Content="MR" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="2" Classes="calc-key memory-key"
+                    Content="M+" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="3" Classes="calc-key memory-key"
+                    Content="M−" IsEnabled="False" />
+            <Button Grid.Row="0" Grid.Column="4" Classes="calc-key memory-key"
+                    Content="DEG" IsEnabled="False" />
+
+            <Button Grid.Row="1" Grid.Column="0" Classes="calc-key scientific-key"
+                    Content="sin" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="1" Classes="calc-key scientific-key"
+                    Content="cos" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="2" Classes="calc-key scientific-key"
+                    Content="tan" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="ln" IsEnabled="False" />
+            <Button Grid.Row="1" Grid.Column="4" Classes="calc-key scientific-key"
+                    Content="log" IsEnabled="False" />
+
+            <Button Grid.Row="2" Grid.Column="0" Classes="calc-key scientific-key"
+                    Content="π" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="1" Classes="calc-key scientific-key"
+                    Content="e" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="2" Classes="calc-key scientific-key"
+                    Content="x²" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="√x" IsEnabled="False" />
+            <Button Grid.Row="2" Grid.Column="4" Classes="calc-key scientific-key"
+                    Content="xʸ" IsEnabled="False" />
+
+            <Button Grid.Row="3" Grid.Column="0"
+                    Classes="calc-key action-key"
+                    Content="AC"
+                    Command="{Binding ClearCommand}" />
+            <Button Grid.Row="3" Grid.Column="1" Classes="calc-key action-key"
+                    Content="⌫" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="2" Classes="calc-key action-key"
+                    Content="(" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="3" Classes="calc-key action-key"
+                    Content=")" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="÷"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="÷" />
+
+            <Button Grid.Row="4" Grid.Column="0" Classes="calc-key number-key"
+                    Content="7" Command="{Binding AppendDigitCommand}" CommandParameter="7" />
+            <Button Grid.Row="4" Grid.Column="1" Classes="calc-key number-key"
+                    Content="8" Command="{Binding AppendDigitCommand}" CommandParameter="8" />
+            <Button Grid.Row="4" Grid.Column="2" Classes="calc-key number-key"
+                    Content="9" Command="{Binding AppendDigitCommand}" CommandParameter="9" />
+            <Button Grid.Row="4" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="%" IsEnabled="False" />
+            <Button Grid.Row="4" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="×"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="×" />
+
+            <Button Grid.Row="5" Grid.Column="0" Classes="calc-key number-key"
+                    Content="4" Command="{Binding AppendDigitCommand}" CommandParameter="4" />
+            <Button Grid.Row="5" Grid.Column="1" Classes="calc-key number-key"
+                    Content="5" Command="{Binding AppendDigitCommand}" CommandParameter="5" />
+            <Button Grid.Row="5" Grid.Column="2" Classes="calc-key number-key"
+                    Content="6" Command="{Binding AppendDigitCommand}" CommandParameter="6" />
+            <Button Grid.Row="5" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="1/x" IsEnabled="False" />
+            <Button Grid.Row="5" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="−"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="−" />
+
+            <Button Grid.Row="6" Grid.Column="0" Classes="calc-key number-key"
+                    Content="1" Command="{Binding AppendDigitCommand}" CommandParameter="1" />
+            <Button Grid.Row="6" Grid.Column="1" Classes="calc-key number-key"
+                    Content="2" Command="{Binding AppendDigitCommand}" CommandParameter="2" />
+            <Button Grid.Row="6" Grid.Column="2" Classes="calc-key number-key"
+                    Content="3" Command="{Binding AppendDigitCommand}" CommandParameter="3" />
+            <Button Grid.Row="6" Grid.Column="3" Classes="calc-key scientific-key"
+                    Content="±" IsEnabled="False" />
+            <Button Grid.Row="6" Grid.Column="4"
+                    Classes="calc-key operator-key"
+                    Content="+"
+                    Command="{Binding SelectOperatorCommand}"
+                    CommandParameter="+" />
+
+            <Button Grid.Row="7"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Classes="calc-key number-key"
+                    Content="0"
+                    Command="{Binding AppendDigitCommand}"
+                    CommandParameter="0" />
+
+            <Button Grid.Row="7"
+                    Grid.Column="2"
+                    Classes="calc-key number-key"
+                    Content="."
+                    Command="{Binding AppendDecimalSeparatorCommand}" />
+
+            <Button Grid.Row="7"
+                    Grid.Column="3"
+                    Classes="calc-key scientific-key"
+                    Content="ANS"
+                    IsEnabled="False" />
+
+            <Button Grid.Row="7"
+                    Grid.Column="4"
+                    Classes="calc-key equals-key"
+                    Content="="
+                    Command="{Binding EvaluateCommand}" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="2"
+              Classes="card"
+              Padding="20">
+
+        <Grid RowDefinitions="Auto,14,*">
+
+          <TextBlock Text="HISTORY"
+                     FontSize="22"
+                     FontWeight="Bold"
+                     Foreground="{DynamicResource MagentaBrush}" />
+
+          <ScrollViewer Grid.Row="2"
+                        VerticalScrollBarVisibility="Auto">
+
+            <ItemsControl ItemsSource="{Binding HistoryEntries}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:CalculationHistoryEntryViewModel">
+                  <Border Classes="history-entry"
+                          Margin="0,0,0,10">
+
+                    <Grid RowDefinitions="Auto,Auto">
+                      <TextBlock Text="{Binding Expression}"
+                                 FontSize="15"
+                                 Foreground="{DynamicResource SecondaryTextBrush}"
+                                 TextWrapping="Wrap" />
+
+                      <TextBlock Grid.Row="1"
+                                 Margin="0,8,0,0"
+                                 Text="{Binding Result}"
+                                 FontSize="24"
+                                 FontWeight="Bold"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                 TextAlignment="Right" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border Classes="toast"
+            IsVisible="{Binding IsStartupToastVisible}"
+            IsHitTestVisible="False"
+            Focusable="False"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Width="330"
+            Margin="0,0,16,16">
+
+      <StackPanel Orientation="Horizontal"
+                  Spacing="12">
+
+        <TextBlock Text="✓"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource DarkTextBrush}"
+                   VerticalAlignment="Center" />
+
+        <StackPanel Spacing="2">
+          <TextBlock Text="Basic calculator ready"
+                     FontSize="16"
+                     FontWeight="Bold"
+                     Foreground="{DynamicResource DarkTextBrush}" />
+
+          <TextBlock Text="Binary operations, evaluation, error recovery, and history are available."
+                     MaxWidth="260"
+                     FontSize="13"
+                     Foreground="{DynamicResource DarkTextBrush}"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </Grid>
+
+</Window>

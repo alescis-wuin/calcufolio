@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Calcufolio.Application/Calcufolio.Application.csproj" />
+    <Project Path="src/Calcufolio.Domain/Calcufolio.Domain.csproj" />
+    <Project Path="src/Calcufolio.Infrastructure/Calcufolio.Infrastructure.csproj" />
+    <Project Path="src/Calcufolio.Presentation/Calcufolio.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Calcufolio.Application.Tests/Calcufolio.Application.Tests.csproj" />
+    <Project Path="tests/Calcufolio.Domain.Tests/Calcufolio.Domain.Tests.csproj" />
+    <Project Path="tests/Calcufolio.Presentation.Tests/Calcufolio.Presentation.Tests.csproj" />
+  </Folder>
+</Solution>
