@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Controller;
+using Calcufolio.Application.Interaction.Editor.Actions;
 using Calcufolio.Application.Interaction.State;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -36,6 +37,15 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial string DisplayValue { get; set; } = "0";
 
+    [ObservableProperty]
+    public partial int EditorCaretIndex { get; set; } = 1;
+
+    [ObservableProperty]
+    public partial int EditorSelectionStart { get; set; } = 1;
+
+    [ObservableProperty]
+    public partial int EditorSelectionEnd { get; set; } = 1;
+
     public string AngleMode { get; } = "DEG";
 
     public string MemoryStatus { get; } = "M  0";
@@ -66,6 +76,14 @@ public sealed partial class MainViewModel : ViewModelBase
     {
         _controller.Dispatch(
             new SelectOperatorAction(operatorSymbol));
+    }
+
+    [RelayCommand]
+    private void Backspace()
+    {
+        _controller.Dispatch(
+            new EditInputAction(
+                new BackspaceEditorAction()));
     }
 
     [RelayCommand]
@@ -102,6 +120,15 @@ public sealed partial class MainViewModel : ViewModelBase
     {
         Expression = state.Expression;
         DisplayValue = state.DisplayValue;
+
+        EditorCaretIndex =
+            state.Editor.CaretIndex;
+
+        EditorSelectionStart =
+            state.Editor.SelectionStart;
+
+        EditorSelectionEnd =
+            state.Editor.SelectionEnd;
 
         _historyEntries.Clear();
 

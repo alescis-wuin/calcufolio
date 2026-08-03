@@ -1,3 +1,5 @@
+using Calcufolio.Application.Interaction.Editor.State;
+using Calcufolio.Application.Interaction.State;
 using Calcufolio.Presentation.ViewModels;
 
 namespace Calcufolio.Presentation.Tests.ViewModels;
@@ -18,7 +20,39 @@ public sealed class MainViewModelInputTests
             string.Empty,
             viewModel.Expression);
 
+        Assert.Equal(
+            1,
+            viewModel.EditorCaretIndex);
+
         Assert.Empty(viewModel.HistoryEntries);
+    }
+
+    [Fact]
+    public void ConstructorProjectsInitialSelection()
+    {
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                Editor = new EditorState(
+                    "12345",
+                    1,
+                    4),
+            };
+
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create(initialState);
+
+        Assert.Equal(
+            1,
+            viewModel.EditorCaretIndex);
+
+        Assert.Equal(
+            1,
+            viewModel.EditorSelectionStart);
+
+        Assert.Equal(
+            4,
+            viewModel.EditorSelectionEnd);
     }
 
     [Fact]
@@ -91,6 +125,21 @@ public sealed class MainViewModelInputTests
 
         Assert.Equal(
             "1.5",
+            viewModel.DisplayValue);
+    }
+
+    [Fact]
+    public void BackspaceRemovesPreviousCharacter()
+    {
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create();
+
+        viewModel.AppendDigitCommand.Execute("1");
+        viewModel.AppendDigitCommand.Execute("2");
+        viewModel.BackspaceCommand.Execute(null);
+
+        Assert.Equal(
+            "1",
             viewModel.DisplayValue);
     }
 

@@ -62,15 +62,30 @@
                          TextAlignment="Right"
                          TextTrimming="CharacterEllipsis" />
 
-              <TextBlock Grid.Row="1"
-                         Grid.ColumnSpan="2"
-                         Margin="0,12,0,0"
-                         Text="{Binding DisplayValue}"
-                         FontSize="50"
-                         FontWeight="Bold"
-                         Foreground="{DynamicResource PrimaryTextBrush}"
-                         TextAlignment="Right"
-                         TextTrimming="CharacterEllipsis" />
+              <TextBox x:Name="CalculatorDisplay"
+                       Grid.Row="1"
+                       Grid.ColumnSpan="2"
+                       Margin="0,12,0,0"
+                       Text="{Binding DisplayValue, Mode=OneWay}"
+                       CaretIndex="{Binding EditorCaretIndex, Mode=OneWay}"
+                       SelectionStart="{Binding EditorSelectionStart, Mode=OneWay}"
+                       SelectionEnd="{Binding EditorSelectionEnd, Mode=OneWay}"
+                       FontSize="50"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
+                       CaretBrush="{DynamicResource CyanBrush}"
+                       SelectionBrush="{DynamicResource CyanBrush}"
+                       SelectionForegroundBrush="{DynamicResource DarkTextBrush}"
+                       TextAlignment="Right"
+                       HorizontalContentAlignment="Stretch"
+                       VerticalContentAlignment="Center"
+                       Background="Transparent"
+                       BorderThickness="0"
+                       Padding="0"
+                       IsReadOnly="True"
+                       IsTabStop="True"
+                       ClearSelectionOnLostFocus="False"
+                       IsInactiveSelectionHighlightEnabled="True" />
             </Grid>
           </Border>
 
@@ -117,8 +132,10 @@
                     Classes="calc-key action-key"
                     Content="AC"
                     Command="{Binding ClearCommand}" />
-            <Button Grid.Row="3" Grid.Column="1" Classes="calc-key action-key"
-                    Content="⌫" IsEnabled="False" />
+            <Button Grid.Row="3" Grid.Column="1"
+                    Classes="calc-key action-key"
+                    Content="⌫"
+                    Command="{Binding BackspaceCommand}" />
             <Button Grid.Row="3" Grid.Column="2" Classes="calc-key action-key"
                     Content="(" IsEnabled="False" />
             <Button Grid.Row="3" Grid.Column="3" Classes="calc-key action-key"
@@ -263,12 +280,12 @@
                    VerticalAlignment="Center" />
 
         <StackPanel Spacing="2">
-          <TextBlock Text="Basic calculator ready"
+          <TextBlock Text="Input editor ready"
                      FontSize="16"
                      FontWeight="Bold"
                      Foreground="{DynamicResource DarkTextBrush}" />
 
-          <TextBlock Text="Binary operations, evaluation, error recovery, and history are available."
+          <TextBlock Text="Keyboard input, caret movement, selection, and backspace are available."
                      MaxWidth="260"
                      FontSize="13"
                      Foreground="{DynamicResource DarkTextBrush}"

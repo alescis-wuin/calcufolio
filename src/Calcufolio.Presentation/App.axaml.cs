@@ -4,6 +4,7 @@ using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
+using Calcufolio.Presentation.Input;
 using Calcufolio.Presentation.ViewModels;
 using Calcufolio.Presentation.Views;
 
@@ -40,7 +41,15 @@ public partial class App : global::Avalonia.Application
                     controller,
                     stateStore);
 
-            desktop.MainWindow = new MainWindow
+            AvaloniaKeyboardInputRouter keyboardInputRouter =
+                new(controller);
+
+            AvaloniaSelectionInputAdapter selectionInputAdapter =
+                new(controller);
+
+            desktop.MainWindow = new MainWindow(
+                keyboardInputRouter,
+                selectionInputAdapter)
             {
                 DataContext = viewModel,
             };

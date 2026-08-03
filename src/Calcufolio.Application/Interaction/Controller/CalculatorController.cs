@@ -108,6 +108,14 @@ public sealed class CalculatorController : ICalculatorController
             return;
         }
 
+        if (state.DisplayValue.Length == 0)
+        {
+            state = state with
+            {
+                Editor = EditorState.FromText("0"),
+            };
+        }
+
         EditorState updatedEditor =
             _editorStateReducer.Reduce(
                 state.Editor,
@@ -165,7 +173,12 @@ public sealed class CalculatorController : ICalculatorController
         if (state.PendingOperation is not null &&
             !state.ReplaceDisplayOnNextInput)
         {
-            state = EvaluatePendingOperation(state);
+            if (!TryEvaluatePendingOperation(
+                    state,
+                    out state))
+            {
+                return;
+            }
 
             if (state.HasError)
             {
@@ -174,9 +187,19 @@ public sealed class CalculatorController : ICalculatorController
             }
         }
 
-        double leftOperand =
-            state.PendingOperation?.LeftOperand ??
-            ParseDisplayValue(state.DisplayValue);
+        double leftOperand;
+
+        if (state.PendingOperation is not null)
+        {
+            leftOperand =
+                state.PendingOperation.LeftOperand;
+        }
+        else if (!TryParseDisplayValue(
+                     state.DisplayValue,
+                     out leftOperand))
+        {
+            return;
+        }
 
         PendingBinaryOperation pendingOperation = new(
             leftOperand,
@@ -203,8 +226,14 @@ public sealed class CalculatorController : ICalculatorController
             return;
         }
 
-        _stateStore.Replace(
-            EvaluatePendingOperation(state));
+        if (!TryEvaluatePendingOperation(
+                state,
+                out CalculatorState evaluatedState))
+        {
+            return;
+        }
+
+        _stateStore.Replace(evaluatedState);
     }
 
     private void Clear()
@@ -213,16 +242,22 @@ public sealed class CalculatorController : ICalculatorController
             ResetCalculatorState(_stateStore.Current));
     }
 
-    private CalculatorState EvaluatePendingOperation(
-        CalculatorState state)
+    private bool TryEvaluatePendingOperation(
+        CalculatorState state,
+        out CalculatorState evaluatedState)
     {
         PendingBinaryOperation pendingOperation =
             state.PendingOperation ??
             throw new InvalidOperationException(
                 "No binary operation is pending.");
 
-        double rightOperand =
-            ParseDisplayValue(state.DisplayValue);
+        if (!TryParseDisplayValue(
+                state.DisplayValue,
+                out double rightOperand))
+        {
+            evaluatedState = state;
+            return false;
+        }
 
         string completedExpression =
             CreateCompletedExpression(
@@ -239,7 +274,7 @@ public sealed class CalculatorController : ICalculatorController
             string displayValue =
                 FormatNumber(result);
 
-            return state with
+            evaluatedState = state with
             {
                 Editor = EditorState.FromText(displayValue),
                 Expression = completedExpression,
@@ -251,18 +286,24 @@ public sealed class CalculatorController : ICalculatorController
                     completedExpression,
                     displayValue),
             };
+
+            return true;
         }
         catch (DivideByZeroException exception)
         {
-            return ShowError(
+            evaluatedState = ShowError(
                 state,
                 exception.Message);
+
+            return true;
         }
         catch (OverflowException exception)
         {
-            return ShowError(
+            evaluatedState = ShowError(
                 state,
                 exception.Message);
+
+            return true;
         }
     }
 
@@ -333,21 +374,16 @@ public sealed class CalculatorController : ICalculatorController
         return entries.AsReadOnly();
     }
 
-    private static double ParseDisplayValue(
-        string displayValue)
+    private static bool TryParseDisplayValue(
+        string displayValue,
+        out double value)
     {
-        if (!double.TryParse(
+        return double.TryParse(
                 displayValue,
                 NumberStyles.Float,
                 CultureInfo.InvariantCulture,
-                out double operand) ||
-            !double.IsFinite(operand))
-        {
-            throw new InvalidOperationException(
-                "The display does not contain a valid finite operand.");
-        }
-
-        return operand;
+                out value) &&
+            double.IsFinite(value);
     }
 
     private static string CreatePendingExpression(
