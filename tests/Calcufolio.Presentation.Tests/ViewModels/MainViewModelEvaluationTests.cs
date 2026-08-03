@@ -1,3 +1,7 @@
+using System.Globalization;
+using Calcufolio.Application.Interaction.Controller;
+using Calcufolio.Application.Interaction.State;
+using Calcufolio.Domain.Calculations;
 using Calcufolio.Presentation.ViewModels;
 
 namespace Calcufolio.Presentation.Tests.ViewModels;
@@ -252,13 +256,16 @@ public sealed class MainViewModelEvaluationTests
     [Fact]
     public void OverflowShowsRecoverableError()
     {
-        MainViewModel viewModel =
-            MainViewModelTestFactory.Create();
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                DisplayValue = double.MaxValue.ToString(
+                    "R",
+                    CultureInfo.InvariantCulture),
+            };
 
-        viewModel.DisplayValue =
-            double.MaxValue.ToString(
-                "R",
-                System.Globalization.CultureInfo.InvariantCulture);
+        MainViewModel viewModel =
+            MainViewModelTestFactory.Create(initialState);
 
         viewModel.SelectOperatorCommand.Execute("×");
         viewModel.AppendDigitCommand.Execute("2");
@@ -293,14 +300,38 @@ public sealed class MainViewModelEvaluationTests
     }
 
     [Fact]
-    public void ConstructorRejectsMissingCalculatorSession()
+    public void ConstructorRejectsMissingController()
     {
+        CalculatorStateStore stateStore = new();
+
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(
-                () => new MainViewModel(null!));
+                () => new MainViewModel(
+                    null!,
+                    stateStore));
 
         Assert.Equal(
-            "calculatorSession",
+            "controller",
+            exception.ParamName);
+    }
+
+    [Fact]
+    public void ConstructorRejectsMissingStateStore()
+    {
+        CalculatorStateStore stateStore = new();
+
+        CalculatorController controller = new(
+            new CalculationEngine(),
+            stateStore);
+
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(
+                () => new MainViewModel(
+                    controller,
+                    null!));
+
+        Assert.Equal(
+            "stateStore",
             exception.ParamName);
     }
 

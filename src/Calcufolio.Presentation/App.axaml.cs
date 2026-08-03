@@ -1,6 +1,7 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Calcufolio.Application.Calculations;
+using Calcufolio.Application.Interaction.Controller;
+using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 using Calcufolio.Presentation.ViewModels;
 using Calcufolio.Presentation.Views;
@@ -21,12 +22,18 @@ public partial class App : global::Avalonia.Application
             ICalculationEngine calculationEngine =
                 new CalculationEngine();
 
-            ICalculatorSession calculatorSession =
-                new CalculatorSession(
-                    calculationEngine);
+            ICalculatorStateStore stateStore =
+                new CalculatorStateStore();
+
+            ICalculatorController controller =
+                new CalculatorController(
+                    calculationEngine,
+                    stateStore);
 
             MainViewModel viewModel =
-                new(calculatorSession);
+                new(
+                    controller,
+                    stateStore);
 
             desktop.MainWindow = new MainWindow
             {
