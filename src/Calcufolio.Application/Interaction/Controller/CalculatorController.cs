@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using Calcufolio.Application.Calculations;
 using Calcufolio.Application.Interaction.Actions;
@@ -261,7 +262,7 @@ public sealed class CalculatorController : ICalculatorController
         };
     }
 
-    private static IReadOnlyList<CalculationHistoryEntry> AddHistory(
+    private static ReadOnlyCollection<CalculationHistoryEntry> AddHistory(
         IReadOnlyList<CalculationHistoryEntry> currentEntries,
         string expression,
         string result)
