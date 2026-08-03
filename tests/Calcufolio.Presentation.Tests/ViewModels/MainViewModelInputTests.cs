@@ -100,9 +100,9 @@ public sealed class MainViewModelInputTests
         MainViewModel viewModel =
             MainViewModelTestFactory.Create();
 
-        viewModel.Expression = "12 +";
-
-        viewModel.AppendDigitCommand.Execute("8");
+        viewModel.AppendDigitCommand.Execute("1");
+        viewModel.SelectOperatorCommand.Execute("+");
+        viewModel.AppendDigitCommand.Execute("2");
         viewModel.ClearCommand.Execute(null);
 
         Assert.Equal(
@@ -118,7 +118,8 @@ public sealed class MainViewModelInputTests
     [InlineData("")]
     [InlineData("12")]
     [InlineData("x")]
-    public void AppendDigitRejectsInvalidInput(string digit)
+    public void AppendDigitRejectsInvalidInput(
+        string digit)
     {
         MainViewModel viewModel =
             MainViewModelTestFactory.Create();
