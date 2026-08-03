@@ -1,3 +1,4 @@
+using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 
 namespace Calcufolio.Application.Tests.Interaction.State;
@@ -20,7 +21,7 @@ public sealed class CalculatorStateStoreTests
         CalculatorState initialState =
             CalculatorState.Initial with
             {
-                DisplayValue = "42",
+                Editor = EditorState.FromText("42"),
             };
 
         CalculatorStateStore store = new(initialState);
@@ -37,7 +38,7 @@ public sealed class CalculatorStateStoreTests
         CalculatorState replacement =
             CalculatorState.Initial with
             {
-                DisplayValue = "7",
+                Editor = EditorState.FromText("7"),
             };
 
         CalculatorState? publishedState = null;

@@ -1,4 +1,5 @@
 using Calcufolio.Application.Calculations;
+using Calcufolio.Application.Interaction.Editor.State;
 
 namespace Calcufolio.Application.Interaction.State;
 
@@ -8,7 +9,11 @@ public sealed record CalculatorState
 
     public string Expression { get; init; } = string.Empty;
 
-    public string DisplayValue { get; init; } = "0";
+    public EditorState Editor { get; init; } =
+        EditorState.FromText("0");
+
+    public string DisplayValue =>
+        Editor.Text;
 
     public PendingBinaryOperation? PendingOperation { get; init; }
 

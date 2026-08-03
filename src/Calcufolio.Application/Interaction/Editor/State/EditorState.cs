@@ -24,10 +24,8 @@ public sealed record EditorState
         SelectionAnchorIndex = selectionAnchorIndex;
     }
 
-    public static EditorState Empty { get; } = new(
-        string.Empty,
-        0,
-        0);
+    public static EditorState Empty { get; } =
+        FromText(string.Empty);
 
     public string Text { get; }
 
@@ -57,6 +55,17 @@ public sealed record EditorState
                 SelectionStart,
                 SelectionLength)
             : string.Empty;
+
+    public static EditorState FromText(
+        string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        return new EditorState(
+            text,
+            text.Length,
+            text.Length);
+    }
 
     private static void ValidateIndex(
         int index,

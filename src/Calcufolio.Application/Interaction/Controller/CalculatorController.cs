@@ -2,6 +2,9 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Calcufolio.Application.Calculations;
 using Calcufolio.Application.Interaction.Actions;
+using Calcufolio.Application.Interaction.Editor.Actions;
+using Calcufolio.Application.Interaction.Editor.Reducer;
+using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 
@@ -12,16 +15,20 @@ public sealed class CalculatorController : ICalculatorController
     private const int MaximumHistoryEntries = 20;
 
     private readonly ICalculationEngine _calculationEngine;
+    private readonly IEditorStateReducer _editorStateReducer;
     private readonly ICalculatorStateStore _stateStore;
 
     public CalculatorController(
         ICalculationEngine calculationEngine,
+        IEditorStateReducer editorStateReducer,
         ICalculatorStateStore stateStore)
     {
         ArgumentNullException.ThrowIfNull(calculationEngine);
+        ArgumentNullException.ThrowIfNull(editorStateReducer);
         ArgumentNullException.ThrowIfNull(stateStore);
 
         _calculationEngine = calculationEngine;
+        _editorStateReducer = editorStateReducer;
         _stateStore = stateStore;
     }
 
@@ -38,6 +45,10 @@ public sealed class CalculatorController : ICalculatorController
 
             case AppendDecimalSeparatorAction:
                 AppendDecimalSeparator();
+                break;
+
+            case EditInputAction editInput:
+                EditInput(editInput.EditorAction);
                 break;
 
             case SelectOperatorAction selectOperator:
@@ -66,14 +77,21 @@ public sealed class CalculatorController : ICalculatorController
         CalculatorState state =
             PrepareForValueInput(_stateStore.Current);
 
-        string displayValue = state.DisplayValue == "0"
-            ? digit
-            : $"{state.DisplayValue}{digit}";
+        EditorState editor = state.DisplayValue == "0"
+            ? _editorStateReducer.Reduce(
+                state.Editor,
+                new SelectAllEditorAction())
+            : state.Editor;
+
+        EditorState updatedEditor =
+            _editorStateReducer.Reduce(
+                editor,
+                new InsertTextEditorAction(digit));
 
         _stateStore.Replace(
             state with
             {
-                DisplayValue = displayValue,
+                Editor = updatedEditor,
             });
     }
 
@@ -90,10 +108,44 @@ public sealed class CalculatorController : ICalculatorController
             return;
         }
 
+        EditorState updatedEditor =
+            _editorStateReducer.Reduce(
+                state.Editor,
+                new InsertTextEditorAction("."));
+
         _stateStore.Replace(
             state with
             {
-                DisplayValue = $"{state.DisplayValue}.",
+                Editor = updatedEditor,
+            });
+    }
+
+    private void EditInput(
+        EditorAction editorAction)
+    {
+        CalculatorState state =
+            _stateStore.Current;
+
+        bool changesText =
+            editorAction is InsertTextEditorAction or
+            BackspaceEditorAction or
+            DeleteForwardEditorAction;
+
+        if (changesText)
+        {
+            state = PrepareForValueInput(state);
+        }
+
+        EditorState updatedEditor =
+            _editorStateReducer.Reduce(
+                state.Editor,
+                editorAction);
+
+        _stateStore.Replace(
+            state with
+            {
+                Editor = updatedEditor,
+                ReplaceDisplayOnNextInput = false,
             });
     }
 
@@ -189,7 +241,7 @@ public sealed class CalculatorController : ICalculatorController
 
             return state with
             {
-                DisplayValue = displayValue,
+                Editor = EditorState.FromText(displayValue),
                 Expression = completedExpression,
                 PendingOperation = null,
                 HasError = false,
@@ -234,7 +286,7 @@ public sealed class CalculatorController : ICalculatorController
         return state with
         {
             Expression = expression,
-            DisplayValue = "0",
+            Editor = EditorState.FromText("0"),
             ReplaceDisplayOnNextInput = false,
         };
     }
@@ -255,7 +307,7 @@ public sealed class CalculatorController : ICalculatorController
         return state with
         {
             Expression = message,
-            DisplayValue = "Error",
+            Editor = EditorState.FromText("Error"),
             PendingOperation = null,
             HasError = true,
             ReplaceDisplayOnNextInput = true,

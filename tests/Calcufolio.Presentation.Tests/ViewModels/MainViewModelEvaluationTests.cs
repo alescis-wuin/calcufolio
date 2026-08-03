@@ -1,5 +1,7 @@
 using System.Globalization;
 using Calcufolio.Application.Interaction.Controller;
+using Calcufolio.Application.Interaction.Editor.Reducer;
+using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 using Calcufolio.Presentation.ViewModels;
@@ -259,9 +261,10 @@ public sealed class MainViewModelEvaluationTests
         CalculatorState initialState =
             CalculatorState.Initial with
             {
-                DisplayValue = double.MaxValue.ToString(
-                    "R",
-                    CultureInfo.InvariantCulture),
+                Editor = EditorState.FromText(
+                    double.MaxValue.ToString(
+                        "R",
+                        CultureInfo.InvariantCulture)),
             };
 
         MainViewModel viewModel =
@@ -322,6 +325,7 @@ public sealed class MainViewModelEvaluationTests
 
         CalculatorController controller = new(
             new CalculationEngine(),
+            new EditorStateReducer(),
             stateStore);
 
         ArgumentNullException exception =
