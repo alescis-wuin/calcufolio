@@ -57,12 +57,7 @@ public static class CalculatorKeyboardInputMapper
                 KeyModifiers.Shift);
 
         bool primaryModifier =
-            HasModifier(
-                modifiers,
-                KeyModifiers.Control) ||
-            HasModifier(
-                modifiers,
-                KeyModifiers.Meta);
+            HasPrimaryModifier(modifiers);
 
         if (primaryModifier &&
             key == Key.A)
@@ -126,6 +121,33 @@ public static class CalculatorKeyboardInputMapper
 
             _ => null,
         };
+    }
+
+    public static bool IsCopyShortcut(
+        Key key,
+        KeyModifiers modifiers)
+    {
+        return key == Key.C &&
+            HasPrimaryModifier(modifiers);
+    }
+
+    public static bool IsPasteShortcut(
+        Key key,
+        KeyModifiers modifiers)
+    {
+        return key == Key.V &&
+            HasPrimaryModifier(modifiers);
+    }
+
+    private static bool HasPrimaryModifier(
+        KeyModifiers modifiers)
+    {
+        return HasModifier(
+                modifiers,
+                KeyModifiers.Control) ||
+            HasModifier(
+                modifiers,
+                KeyModifiers.Meta);
     }
 
     private static bool HasModifier(

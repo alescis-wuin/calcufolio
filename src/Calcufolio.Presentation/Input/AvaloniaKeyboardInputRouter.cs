@@ -1,19 +1,39 @@
 using Avalonia.Input;
 using Calcufolio.Application.Interaction.Actions;
+using Calcufolio.Application.Interaction.Clipboard;
 using Calcufolio.Application.Interaction.Controller;
 
 namespace Calcufolio.Presentation.Input;
 
 public sealed class AvaloniaKeyboardInputRouter
 {
+    private readonly ICalculatorClipboardController _clipboardController;
     private readonly ICalculatorController _controller;
 
     public AvaloniaKeyboardInputRouter(
-        ICalculatorController controller)
+        ICalculatorController controller,
+        ICalculatorClipboardController clipboardController)
     {
         ArgumentNullException.ThrowIfNull(controller);
+        ArgumentNullException.ThrowIfNull(clipboardController);
 
         _controller = controller;
+        _clipboardController = clipboardController;
+    }
+
+    public static bool CanRouteKey(
+        Key key,
+        KeyModifiers modifiers)
+    {
+        return CalculatorKeyboardInputMapper.IsCopyShortcut(
+                key,
+                modifiers) ||
+            CalculatorKeyboardInputMapper.IsPasteShortcut(
+                key,
+                modifiers) ||
+            CalculatorKeyboardInputMapper.MapKey(
+                key,
+                modifiers) is not null;
     }
 
     public bool RouteText(
@@ -23,11 +43,32 @@ public sealed class AvaloniaKeyboardInputRouter
             CalculatorKeyboardInputMapper.MapText(text));
     }
 
-    public bool RouteKey(
+    public async ValueTask RouteKeyAsync(
         Key key,
-        KeyModifiers modifiers)
+        KeyModifiers modifiers,
+        CancellationToken cancellationToken = default)
     {
-        return Dispatch(
+        if (CalculatorKeyboardInputMapper.IsCopyShortcut(
+                key,
+                modifiers))
+        {
+            await _clipboardController.CopyAsync(
+                cancellationToken);
+
+            return;
+        }
+
+        if (CalculatorKeyboardInputMapper.IsPasteShortcut(
+                key,
+                modifiers))
+        {
+            await _clipboardController.PasteAsync(
+                cancellationToken);
+
+            return;
+        }
+
+        _ = Dispatch(
             CalculatorKeyboardInputMapper.MapKey(
                 key,
                 modifiers));

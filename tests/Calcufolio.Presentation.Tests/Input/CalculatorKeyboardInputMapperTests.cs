@@ -134,6 +134,44 @@ public sealed class CalculatorKeyboardInputMapperTests
             action.EditorAction);
     }
 
+    [Theory]
+    [InlineData(KeyModifiers.Control)]
+    [InlineData(KeyModifiers.Meta)]
+    public void IsCopyShortcutRecognizesPrimaryModifier(
+        KeyModifiers modifiers)
+    {
+        Assert.True(
+            CalculatorKeyboardInputMapper.IsCopyShortcut(
+                Key.C,
+                modifiers));
+    }
+
+    [Theory]
+    [InlineData(KeyModifiers.Control)]
+    [InlineData(KeyModifiers.Meta)]
+    public void IsPasteShortcutRecognizesPrimaryModifier(
+        KeyModifiers modifiers)
+    {
+        Assert.True(
+            CalculatorKeyboardInputMapper.IsPasteShortcut(
+                Key.V,
+                modifiers));
+    }
+
+    [Fact]
+    public void ClipboardShortcutsRejectMissingPrimaryModifier()
+    {
+        Assert.False(
+            CalculatorKeyboardInputMapper.IsCopyShortcut(
+                Key.C,
+                KeyModifiers.None));
+
+        Assert.False(
+            CalculatorKeyboardInputMapper.IsPasteShortcut(
+                Key.V,
+                KeyModifiers.None));
+    }
+
     [Fact]
     public void MapKeyMapsEnterToEvaluation()
     {

@@ -1,5 +1,6 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Calcufolio.Application.Interaction.Clipboard;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.State;
@@ -36,13 +37,29 @@ public partial class App : global::Avalonia.Application
                     editorStateReducer,
                     stateStore);
 
+            IClipboardPort clipboardPort =
+                new AvaloniaClipboardPort(
+                    () => desktop.MainWindow?.Clipboard);
+
+            IClipboardTextSanitizer clipboardTextSanitizer =
+                new NumericClipboardTextSanitizer();
+
+            ICalculatorClipboardController clipboardController =
+                new CalculatorClipboardController(
+                    controller,
+                    stateStore,
+                    clipboardPort,
+                    clipboardTextSanitizer);
+
             MainViewModel viewModel =
                 new(
                     controller,
                     stateStore);
 
             AvaloniaKeyboardInputRouter keyboardInputRouter =
-                new(controller);
+                new(
+                    controller,
+                    clipboardController);
 
             AvaloniaSelectionInputAdapter selectionInputAdapter =
                 new(controller);

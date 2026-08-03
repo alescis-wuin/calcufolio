@@ -144,9 +144,20 @@ public sealed class CalculatorController : ICalculatorController
             state = PrepareForValueInput(state);
         }
 
+        EditorState editor = state.Editor;
+
+        if (editorAction is InsertTextEditorAction &&
+            state.DisplayValue == "0" &&
+            !editor.HasSelection)
+        {
+            editor = _editorStateReducer.Reduce(
+                editor,
+                new SelectAllEditorAction());
+        }
+
         EditorState updatedEditor =
             _editorStateReducer.Reduce(
-                state.Editor,
+                editor,
                 editorAction);
 
         _stateStore.Replace(

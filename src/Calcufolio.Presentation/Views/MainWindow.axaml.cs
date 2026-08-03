@@ -57,17 +57,25 @@ public partial class MainWindow : Window
         RestoreDisplayFocusAndSelection();
     }
 
-    private void OnKeyDown(
+    private async void OnKeyDown(
         object? sender,
         KeyEventArgs eventArgs)
     {
-        if (_keyboardInputRouter?.RouteKey(
+        if (_keyboardInputRouter is null ||
+            !AvaloniaKeyboardInputRouter.CanRouteKey(
                 eventArgs.Key,
-                eventArgs.KeyModifiers) == true)
+                eventArgs.KeyModifiers))
         {
-            eventArgs.Handled = true;
-            RestoreDisplayFocusAndSelection();
+            return;
         }
+
+        eventArgs.Handled = true;
+
+        await _keyboardInputRouter.RouteKeyAsync(
+            eventArgs.Key,
+            eventArgs.KeyModifiers);
+
+        RestoreDisplayFocusAndSelection();
     }
 
     private void OnTextInput(
