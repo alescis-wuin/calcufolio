@@ -125,11 +125,13 @@
             <Button Grid.Row="2" Grid.Column="4" Classes="calc-key scientific-key"
                     Content="xʸ" IsEnabled="False" />
 
-            <Button Grid.Row="3" Grid.Column="0"
+            <Button x:Name="ClearButton"
+                    Grid.Row="3" Grid.Column="0"
                     Classes="calc-key action-key"
                     Content="AC"
                     Command="{Binding ClearCommand}" />
-            <Button Grid.Row="3" Grid.Column="1"
+            <Button x:Name="BackspaceButton"
+                    Grid.Row="3" Grid.Column="1"
                     Classes="calc-key action-key"
                     Content="⌫"
                     Command="{Binding BackspaceCommand}" />
@@ -137,55 +139,69 @@
                     Content="(" IsEnabled="False" />
             <Button Grid.Row="3" Grid.Column="3" Classes="calc-key action-key"
                     Content=")" IsEnabled="False" />
-            <Button Grid.Row="3" Grid.Column="4"
+            <Button x:Name="DivideButton"
+                    Grid.Row="3" Grid.Column="4"
                     Classes="calc-key operator-key"
                     Content="÷"
                     Command="{Binding SelectOperatorCommand}"
                     CommandParameter="÷" />
 
-            <Button Grid.Row="4" Grid.Column="0" Classes="calc-key number-key"
+            <Button x:Name="Digit7Button"
+                    Grid.Row="4" Grid.Column="0" Classes="calc-key number-key"
                     Content="7" Command="{Binding AppendDigitCommand}" CommandParameter="7" />
-            <Button Grid.Row="4" Grid.Column="1" Classes="calc-key number-key"
+            <Button x:Name="Digit8Button"
+                    Grid.Row="4" Grid.Column="1" Classes="calc-key number-key"
                     Content="8" Command="{Binding AppendDigitCommand}" CommandParameter="8" />
-            <Button Grid.Row="4" Grid.Column="2" Classes="calc-key number-key"
+            <Button x:Name="Digit9Button"
+                    Grid.Row="4" Grid.Column="2" Classes="calc-key number-key"
                     Content="9" Command="{Binding AppendDigitCommand}" CommandParameter="9" />
             <Button Grid.Row="4" Grid.Column="3" Classes="calc-key scientific-key"
                     Content="%" IsEnabled="False" />
-            <Button Grid.Row="4" Grid.Column="4"
+            <Button x:Name="MultiplyButton"
+                    Grid.Row="4" Grid.Column="4"
                     Classes="calc-key operator-key"
                     Content="×"
                     Command="{Binding SelectOperatorCommand}"
                     CommandParameter="×" />
 
-            <Button Grid.Row="5" Grid.Column="0" Classes="calc-key number-key"
+            <Button x:Name="Digit4Button"
+                    Grid.Row="5" Grid.Column="0" Classes="calc-key number-key"
                     Content="4" Command="{Binding AppendDigitCommand}" CommandParameter="4" />
-            <Button Grid.Row="5" Grid.Column="1" Classes="calc-key number-key"
+            <Button x:Name="Digit5Button"
+                    Grid.Row="5" Grid.Column="1" Classes="calc-key number-key"
                     Content="5" Command="{Binding AppendDigitCommand}" CommandParameter="5" />
-            <Button Grid.Row="5" Grid.Column="2" Classes="calc-key number-key"
+            <Button x:Name="Digit6Button"
+                    Grid.Row="5" Grid.Column="2" Classes="calc-key number-key"
                     Content="6" Command="{Binding AppendDigitCommand}" CommandParameter="6" />
             <Button Grid.Row="5" Grid.Column="3" Classes="calc-key scientific-key"
                     Content="1/x" IsEnabled="False" />
-            <Button Grid.Row="5" Grid.Column="4"
+            <Button x:Name="SubtractButton"
+                    Grid.Row="5" Grid.Column="4"
                     Classes="calc-key operator-key"
                     Content="−"
                     Command="{Binding SelectOperatorCommand}"
                     CommandParameter="−" />
 
-            <Button Grid.Row="6" Grid.Column="0" Classes="calc-key number-key"
+            <Button x:Name="Digit1Button"
+                    Grid.Row="6" Grid.Column="0" Classes="calc-key number-key"
                     Content="1" Command="{Binding AppendDigitCommand}" CommandParameter="1" />
-            <Button Grid.Row="6" Grid.Column="1" Classes="calc-key number-key"
+            <Button x:Name="Digit2Button"
+                    Grid.Row="6" Grid.Column="1" Classes="calc-key number-key"
                     Content="2" Command="{Binding AppendDigitCommand}" CommandParameter="2" />
-            <Button Grid.Row="6" Grid.Column="2" Classes="calc-key number-key"
+            <Button x:Name="Digit3Button"
+                    Grid.Row="6" Grid.Column="2" Classes="calc-key number-key"
                     Content="3" Command="{Binding AppendDigitCommand}" CommandParameter="3" />
             <Button Grid.Row="6" Grid.Column="3" Classes="calc-key scientific-key"
                     Content="±" IsEnabled="False" />
-            <Button Grid.Row="6" Grid.Column="4"
+            <Button x:Name="AddButton"
+                    Grid.Row="6" Grid.Column="4"
                     Classes="calc-key operator-key"
                     Content="+"
                     Command="{Binding SelectOperatorCommand}"
                     CommandParameter="+" />
 
-            <Button Grid.Row="7"
+            <Button x:Name="Digit0Button"
+                    Grid.Row="7"
                     Grid.Column="0"
                     Grid.ColumnSpan="2"
                     Classes="calc-key number-key"
@@ -193,7 +209,8 @@
                     Command="{Binding AppendDigitCommand}"
                     CommandParameter="0" />
 
-            <Button Grid.Row="7"
+            <Button x:Name="DecimalButton"
+                    Grid.Row="7"
                     Grid.Column="2"
                     Classes="calc-key number-key"
                     Content="."
@@ -205,7 +222,8 @@
                     Content="ANS"
                     IsEnabled="False" />
 
-            <Button Grid.Row="7"
+            <Button x:Name="EvaluateButton"
+                    Grid.Row="7"
                     Grid.Column="4"
                     Classes="calc-key equals-key"
                     Content="="

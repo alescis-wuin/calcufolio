@@ -11,12 +11,14 @@ public partial class MainWindow : Window
 {
     private readonly AvaloniaKeyboardInputRouter? _keyboardInputRouter;
     private readonly AvaloniaSelectionInputAdapter? _selectionInputAdapter;
+    private KeyboardButtonFeedbackController? _keyboardButtonFeedbackController;
     private int _displaySynchronizationVersion;
 
     public MainWindow()
     {
         InitializeComponent();
         ConfigureDisplay();
+        ConfigureKeyboardButtonFeedback();
     }
 
     public MainWindow(
@@ -31,6 +33,7 @@ public partial class MainWindow : Window
 
         InitializeComponent();
         ConfigureDisplay();
+        ConfigureKeyboardButtonFeedback();
 
         AddHandler(
             InputElement.KeyDownEvent,
@@ -51,6 +54,34 @@ public partial class MainWindow : Window
             handledEventsToo: true);
 
         Opened += OnOpened;
+    }
+
+    private void ConfigureKeyboardButtonFeedback()
+    {
+        _keyboardButtonFeedbackController =
+            new KeyboardButtonFeedbackController(
+                new Dictionary<string, Button>(
+                    StringComparer.Ordinal)
+                {
+                    ["0"] = Digit0Button,
+                    ["1"] = Digit1Button,
+                    ["2"] = Digit2Button,
+                    ["3"] = Digit3Button,
+                    ["4"] = Digit4Button,
+                    ["5"] = Digit5Button,
+                    ["6"] = Digit6Button,
+                    ["7"] = Digit7Button,
+                    ["8"] = Digit8Button,
+                    ["9"] = Digit9Button,
+                    ["."] = DecimalButton,
+                    ["+"] = AddButton,
+                    ["−"] = SubtractButton,
+                    ["×"] = MultiplyButton,
+                    ["÷"] = DivideButton,
+                    ["="] = EvaluateButton,
+                    ["AC"] = ClearButton,
+                    ["⌫"] = BackspaceButton,
+                });
     }
 
     private void ConfigureDisplay()
@@ -83,6 +114,11 @@ public partial class MainWindow : Window
 
         eventArgs.Handled = true;
 
+        _keyboardButtonFeedbackController?.Flash(
+            CalculatorKeyFeedbackMapper.MapKey(
+                eventArgs.Key,
+                eventArgs.KeyModifiers));
+
         await _keyboardInputRouter.RouteKeyAsync(
             eventArgs.Key,
             eventArgs.KeyModifiers);
@@ -98,6 +134,11 @@ public partial class MainWindow : Window
                 eventArgs.Text) == true)
         {
             eventArgs.Handled = true;
+
+            _keyboardButtonFeedbackController?.Flash(
+                CalculatorKeyFeedbackMapper.MapText(
+                    eventArgs.Text));
+
             QueueDisplaySynchronization();
         }
     }
