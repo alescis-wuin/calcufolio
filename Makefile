@@ -22,9 +22,9 @@ PATCH_OUTPUT ?=
 .PHONY: \
 	help doctor hooks-install hooks-check \
 	clean restore build rebuild run test status \
-	git-check branch-check staged syntax format format-check lint audit \
-	signatures linear-history verify-fast verify \
-	patch patch-validate patch-pack patch-self-test
+	git-check branch-check worktree-clean staged syntax format format-check lint audit \
+	signatures linear-history verify-fast verify verify-push \
+	patch patch-validate patch-pack patch-self-test worktree-clean-self-test
 
 help: ## Show the available commands
 	@printf '\nAvailable commands:\n\n'
@@ -129,6 +129,9 @@ git-check: ## Inspect staged changes and repository status
 branch-check: ## Enforce work branch naming and protection rules
 	@"$(CHECKS_DIRECTORY)/branch-policy.sh"
 
+worktree-clean: ## Reject pending staged, unstaged, or untracked changes
+	@"$(CHECKS_DIRECTORY)/worktree-clean.sh"
+
 staged: ## Validate staged file safety
 	@"$(CHECKS_DIRECTORY)/staged-files.sh"
 
@@ -189,6 +192,9 @@ patch-self-test: ## Run patch workflow unit tests
 		-p 'test_*.py' \
 		-v
 
+worktree-clean-self-test: ## Test clean and dirty worktree detection
+	@"$(CHECKS_DIRECTORY)/tests/worktree-clean-test.sh"
+
 verify-fast: ## Run fast checks suitable before a commit
 	@$(MAKE) --no-print-directory \
 		branch-check staged syntax format-check
@@ -196,4 +202,9 @@ verify-fast: ## Run fast checks suitable before a commit
 verify: ## Run the complete local quality gate
 	@$(MAKE) --no-print-directory \
 		branch-check clean restore build test \
-		syntax lint format-check audit signatures linear-history
+		syntax lint format-check audit worktree-clean-self-test \
+		signatures linear-history
+
+verify-push: ## Require a clean repository before the complete quality gate
+	@$(MAKE) --no-print-directory worktree-clean
+	@$(MAKE) --no-print-directory verify

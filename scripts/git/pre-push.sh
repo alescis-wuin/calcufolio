@@ -56,12 +56,16 @@ if [[ "${PRE_PUSH_DRY_RUN:-0}" == "1" && $update_count -eq 0 ]]; then
 fi
 
 if [[ "$has_non_deletion_update" == "false" ]]; then
+    make -C "$REPOSITORY_ROOT" \
+        --no-print-directory \
+        worktree-clean
+
     success "Only non-protected branch deletions are being pushed."
     exit 0
 fi
 
 make -C "$REPOSITORY_ROOT" \
     --no-print-directory \
-    verify
+    verify-push
 
 success "Pre-push quality gate completed."
