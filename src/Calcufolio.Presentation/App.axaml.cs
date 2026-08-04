@@ -3,6 +3,7 @@ using Avalonia.Markup.Xaml;
 using Calcufolio.Application.Interaction.Clipboard;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Reducer;
+using Calcufolio.Application.Interaction.Preview;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 using Calcufolio.Presentation.Input;
@@ -31,6 +32,10 @@ public partial class App : global::Avalonia.Application
             ICalculatorStateStore stateStore =
                 new CalculatorStateStore();
 
+            ICalculationPreviewService calculationPreviewService =
+                new CalculationPreviewService(
+                    calculationEngine);
+
             ICalculatorController controller =
                 new CalculatorController(
                     calculationEngine,
@@ -54,7 +59,8 @@ public partial class App : global::Avalonia.Application
             MainViewModel viewModel =
                 new(
                     controller,
-                    stateStore);
+                    stateStore,
+                    calculationPreviewService);
 
             AvaloniaKeyboardInputRouter keyboardInputRouter =
                 new(

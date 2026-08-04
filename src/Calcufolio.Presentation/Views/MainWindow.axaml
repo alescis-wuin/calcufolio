@@ -56,7 +56,7 @@
               <TextBlock Grid.Row="0"
                          Grid.Column="1"
                          Margin="16,0,0,0"
-                         Text="{Binding Expression}"
+                         Text="{Binding DisplayExpression}"
                          FontSize="19"
                          Foreground="{DynamicResource SecondaryTextBrush}"
                          TextAlignment="Right"

@@ -2,6 +2,7 @@ using System.Globalization;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.Editor.State;
+using Calcufolio.Application.Interaction.Preview;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 using Calcufolio.Presentation.ViewModels;
@@ -311,7 +312,9 @@ public sealed class MainViewModelEvaluationTests
             Assert.Throws<ArgumentNullException>(
                 () => new MainViewModel(
                     null!,
-                    stateStore));
+                    stateStore,
+                    new CalculationPreviewService(
+                        new CalculationEngine())));
 
         Assert.Equal(
             "controller",
@@ -332,10 +335,35 @@ public sealed class MainViewModelEvaluationTests
             Assert.Throws<ArgumentNullException>(
                 () => new MainViewModel(
                     controller,
-                    null!));
+                    null!,
+                    new CalculationPreviewService(
+                        new CalculationEngine())));
 
         Assert.Equal(
             "stateStore",
+            exception.ParamName);
+    }
+
+    [Fact]
+    public void ConstructorRejectsMissingPreviewService()
+    {
+        CalculatorStateStore stateStore = new();
+        CalculationEngine calculationEngine = new();
+
+        CalculatorController controller = new(
+            calculationEngine,
+            new EditorStateReducer(),
+            stateStore);
+
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(
+                () => new MainViewModel(
+                    controller,
+                    stateStore,
+                    null!));
+
+        Assert.Equal(
+            "calculationPreviewService",
             exception.ParamName);
     }
 
