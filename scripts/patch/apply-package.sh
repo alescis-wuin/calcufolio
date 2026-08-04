@@ -228,27 +228,6 @@ python3 "$PATCH_TOOL" validate-paths \
     --status-file "$post_status_file"
 patch_success "Post-patch status, modification count, files, and directories match the manifest."
 
-patch_step STAGE "Staging only manifest-authorized repository paths."
-mapfile -t stage_paths < <(
-    python3 "$PATCH_TOOL" list --manifest "$manifest_path" --path stage.paths
-)
-git -C "$REPOSITORY_ROOT" add -- "${stage_paths[@]}"
-staged_paths_file="$PATCH_SNAPSHOT_DIRECTORY/staged-paths.txt"
-git -C "$REPOSITORY_ROOT" diff --cached --name-only >"$staged_paths_file"
-printf '%s\n' "${stage_paths[@]}" | sort -u >"$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt"
-sort -u "$staged_paths_file" >"$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt"
-if ! diff -u \
-    "$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt" \
-    "$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt" \
-    >"$PATCH_COMMAND_LOG_DIRECTORY/staged-path-comparison.log"
-then
-    patch_error "Staged paths differ from the manifest. See staged-path-comparison.log."
-    exit 1
-fi
-patch_run_command staged-diff-check "git diff --cached --check" "$REPOSITORY_ROOT"
-patch_run_command staged-diff-stat "git --no-pager diff --cached --stat" "$REPOSITORY_ROOT"
-patch_run_command staged-status "git status --short --untracked-files=all" "$REPOSITORY_ROOT"
-
 patch_step VALIDATE "Running every configured validation command; failures are aggregated."
 VALIDATION_FAILURES=0
 while IFS=$'\t' read -r validation_name validation_command; do
@@ -291,6 +270,28 @@ if [[ "$manual_mode" != 'never' ]]; then
 else
     patch_info "The manifest does not require an application test."
 fi
+
+patch_step STAGE "Staging only manifest-authorized repository paths."
+mapfile -t stage_paths < <(
+    python3 "$PATCH_TOOL" list --manifest "$manifest_path" --path stage.paths
+)
+git -C "$REPOSITORY_ROOT" add -- "${stage_paths[@]}"
+staged_paths_file="$PATCH_SNAPSHOT_DIRECTORY/staged-paths.txt"
+git -C "$REPOSITORY_ROOT" diff --cached --name-only >"$staged_paths_file"
+printf '%s\n' "${stage_paths[@]}" | sort -u >"$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt"
+sort -u "$staged_paths_file" >"$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt"
+if ! diff -u \
+    "$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt" \
+    "$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt" \
+    >"$PATCH_COMMAND_LOG_DIRECTORY/staged-path-comparison.log"
+then
+    patch_error "Staged paths differ from the manifest. See staged-path-comparison.log."
+    exit 1
+fi
+patch_run_command staged-diff-check "git diff --cached --check" "$REPOSITORY_ROOT"
+patch_run_command staged-diff-stat "git --no-pager diff --cached --stat" "$REPOSITORY_ROOT"
+patch_run_command staged-status "git status --short --untracked-files=all" "$REPOSITORY_ROOT"
+patch_run_command staged-safety "make --no-print-directory staged" "$REPOSITORY_ROOT"
 
 patch_step COMMIT "Generating the manifest-defined commit message and creating the signed commit."
 commit_enabled="$(manifest_get commit.enabled)"

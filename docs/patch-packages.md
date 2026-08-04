@@ -25,9 +25,9 @@ The runner performs these operations:
 7. creates or verifies the target work branch;
 8. executes the package `apply.sh` entrypoint;
 9. verifies the exact post-application status and changed paths;
-10. stages only manifest-authorized paths;
-11. executes every validation command even when an earlier validation fails;
-12. optionally runs the application and asks for explicit acceptance;
+10. executes every validation command even when an earlier validation fails;
+11. optionally runs the application and asks for explicit acceptance;
+12. stages only manifest-authorized paths and validates staged-file safety;
 13. generates the commit message from manifest header, body, and footer fields;
 14. creates and verifies the signed commit;
 15. runs post-commit validation and verifies the final repository state.
@@ -111,4 +111,4 @@ make patch-self-test
 - `NO_COLOR=1`: disable console colors;
 - `PATCH_DOWNLOADS_DIR=/path`: override `~/Téléchargements`.
 
-A required manual test always blocks the commit when it is skipped or rejected.
+A required manual test always blocks the commit when it is skipped or rejected. Automated and manual validation run before staging, so rejected or interrupted manual checks preserve authorized changes as unstaged worktree modifications.
