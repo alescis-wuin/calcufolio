@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import shlex
+import stat
+import subprocess
 import tempfile
 import unittest
 import zipfile
@@ -105,24 +109,94 @@ class PatchToolTests(unittest.TestCase):
         self.assertIn("feature(example): add example", message)
         self.assertTrue(message.endswith("Ticket: TEST-001\n"))
 
+    def test_make_patch_uses_immutable_runtime_runner_copy(self) -> None:
+        repository_root = Path(__file__).resolve().parents[3]
+        makefile = (repository_root / "Makefile").read_text(encoding="utf-8")
+        gitignore = (repository_root / ".gitignore").read_text(encoding="utf-8")
 
-def test_make_patch_uses_ignored_runtime_runner_copy(self) -> None:
-    repository_root = Path(__file__).resolve().parents[3]
-    makefile = (repository_root / "Makefile").read_text(encoding="utf-8")
-    gitignore = (repository_root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn(
+            'runtime_runner="$(PATCH_RUNNER).runtime.$$$$.sh"',
+            makefile,
+        )
+        self.assertIn(
+            '"$$runtime_runner"',
+            makefile,
+        )
+        self.assertIn(
+            "scripts/patch/apply-package.sh.runtime.*.sh",
+            gitignore,
+        )
 
-    self.assertIn(
-        'runtime_runner="$(PATCH_RUNNER).runtime.$$$$.sh"',
-        makefile,
-    )
-    self.assertIn(
-        '"$$runtime_runner"',
-        makefile,
-    )
-    self.assertIn(
-        "scripts/patch/apply-package.sh.runtime.*.sh",
-        gitignore,
-    )
+        with tempfile.TemporaryDirectory() as directory:
+            temporary_root = Path(directory)
+            source_runner = temporary_root / "apply-package.sh"
+            result_file = temporary_root / "continued.txt"
+
+            source_runner_quoted = shlex.quote(str(source_runner))
+            result_file_quoted = shlex.quote(str(result_file))
+
+            source_runner.write_text(
+                "\n".join(
+                    [
+                        "#!/usr/bin/env bash",
+                        "set -Eeuo pipefail",
+                        f"readonly source_runner={source_runner_quoted}",
+                        f"readonly result_file={result_file_quoted}",
+                        '[[ "$0" != "$source_runner" ]] || exit 91',
+                        '[[ "$0" == "$source_runner".runtime.*.sh ]] || exit 92',
+                        "printf '%s\\n' '#!/usr/bin/env bash' 'exit 97' > \"$source_runner\"",
+                        "chmod 700 \"$source_runner\"",
+                        "printf '%s\\n' 'continued' > \"$result_file\"",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            source_runner.chmod(
+                source_runner.stat().st_mode |
+                stat.S_IXUSR,
+            )
+
+            environment = os.environ.copy()
+            environment["PYTHONDONTWRITEBYTECODE"] = "1"
+
+            completed = subprocess.run(
+                [
+                    "make",
+                    "--no-print-directory",
+                    "patch",
+                    f"PATCH_RUNNER={source_runner}",
+                    "PATCH=immutable-runner-test",
+                    f"PATCH_DOWNLOADS_DIR={temporary_root}",
+                ],
+                cwd=repository_root,
+                env=environment,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(
+                0,
+                completed.returncode,
+                msg=(
+                    f"stdout:\n{completed.stdout}\n"
+                    f"stderr:\n{completed.stderr}"
+                ),
+            )
+            self.assertEqual(
+                "continued\n",
+                result_file.read_text(encoding="utf-8"),
+            )
+            self.assertEqual(
+                [],
+                list(
+                    temporary_root.glob(
+                        "apply-package.sh.runtime.*.sh"
+                    )
+                ),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
