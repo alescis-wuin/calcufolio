@@ -21,7 +21,17 @@ make hooks-check
 | `pre-commit` | Runs the fast branch, staged-file, syntax, and formatting checks. |
 | `commit-msg` | Enforces the repository commit message convention. |
 | `post-commit` | Verifies the new signature and displays the commit and worktree state. |
-| `pre-push` | Rejects protected branch pushes and runs the complete quality gate. |
+| `pre-push` | Rejects protected or dirty pushes, then runs the complete quality gate. |
+
+The pre-push hook rejects staged, unstaged, and untracked changes before
+running the expensive quality gate. The same checks can be run explicitly:
+
+```bash
+make worktree-clean
+make verify-push
+```
+
+Ignored files do not block pushes.
 
 The installer enables Git worktree-specific configuration and stores the
 absolute hooks path in the current worktree configuration. This avoids
