@@ -6,6 +6,7 @@ readonly SCRIPT_DIRECTORY
 REPOSITORY_ROOT="$(cd -- "$SCRIPT_DIRECTORY/../.." && pwd)"
 readonly REPOSITORY_ROOT
 readonly PATCH_TOOL="$SCRIPT_DIRECTORY/patch_tool.py"
+readonly MANUAL_PROCESS_TOOL="$SCRIPT_DIRECTORY/manual_process.py"
 readonly LOGGING_LIBRARY="$SCRIPT_DIRECTORY/lib/logging.sh"
 
 # shellcheck disable=SC1090
@@ -17,6 +18,10 @@ export PATCH_CURRENT_STAGE='INIT'
 PATCH_RESULT='failed'
 PATCH_NAME_VALUE='unknown'
 PATCH_COMMIT_SHA=''
+PATCH_MANUAL_PROCESS_PID=''
+PATCH_MANUAL_PROCESS_LOG=''
+PATCH_MANUAL_PROCESS_PID_FILE=''
+PATCH_MANUAL_PROCESS_STATUS_FILE=''
 VALIDATION_FAILURES=0
 
 archive_input="${PATCH:-}"
@@ -73,6 +78,7 @@ on_exit()
 {
     local exit_code="$?"
 
+    patch_stop_manual_process || true
     write_summary "$exit_code" || true
     if ((exit_code == 0)); then
         patch_success "Patch workflow completed. Logs: $PATCH_LOG_DIRECTORY"
@@ -96,10 +102,107 @@ manifest_get()
     python3 "$PATCH_TOOL" get --manifest "$manifest_path" --path "$1"
 }
 
+patch_manual_process_is_running()
+{
+    [[ -n "$PATCH_MANUAL_PROCESS_PID" ]] &&
+        kill -0 "$PATCH_MANUAL_PROCESS_PID" 2>/dev/null
+}
+
+patch_manual_process_exit_code()
+{
+    [[ -f "$PATCH_MANUAL_PROCESS_STATUS_FILE" ]] ||
+        return 1
+
+    local exit_code
+    exit_code="$(<"$PATCH_MANUAL_PROCESS_STATUS_FILE")"
+
+    [[ "$exit_code" =~ ^[0-9]+$ ]] ||
+        return 1
+
+    printf '%s' "$exit_code"
+}
+
+patch_stop_manual_process()
+{
+    [[ -n "$PATCH_MANUAL_PROCESS_PID" ]] ||
+        return 0
+
+    if patch_manual_process_is_running; then
+        patch_info "Stopping isolated manual process group $PATCH_MANUAL_PROCESS_PID."
+
+        kill -TERM -- "-$PATCH_MANUAL_PROCESS_PID" 2>/dev/null || true
+
+        for _ in {1..50}; do
+            patch_manual_process_is_running ||
+                break
+
+            sleep 0.1
+        done
+
+        if patch_manual_process_is_running; then
+            patch_warning "The manual process did not stop after SIGTERM; sending SIGKILL."
+            kill -KILL -- "-$PATCH_MANUAL_PROCESS_PID" 2>/dev/null || true
+        fi
+    fi
+
+    PATCH_MANUAL_PROCESS_PID=''
+}
+
+patch_start_manual_process()
+{
+    local command_text="$1"
+
+    PATCH_MANUAL_PROCESS_LOG="$PATCH_COMMAND_LOG_DIRECTORY/$(printf '%02d' "$PATCH_CURRENT_STEP")-manual-test.log"
+    PATCH_MANUAL_PROCESS_PID_FILE="$PATCH_SNAPSHOT_DIRECTORY/manual-test.pid"
+    PATCH_MANUAL_PROCESS_STATUS_FILE="$PATCH_SNAPSHOT_DIRECTORY/manual-test.status"
+
+    rm -f -- \
+        "$PATCH_MANUAL_PROCESS_PID_FILE" \
+        "$PATCH_MANUAL_PROCESS_STATUS_FILE"
+
+    patch_info "Starting isolated manual command: $command_text"
+
+    python3 "$MANUAL_PROCESS_TOOL" start \
+        --cwd "$REPOSITORY_ROOT" \
+        --command "$command_text" \
+        --log-file "$PATCH_MANUAL_PROCESS_LOG" \
+        --pid-file "$PATCH_MANUAL_PROCESS_PID_FILE" \
+        --status-file "$PATCH_MANUAL_PROCESS_STATUS_FILE"
+
+    PATCH_MANUAL_PROCESS_PID="$(<"$PATCH_MANUAL_PROCESS_PID_FILE")"
+
+    [[ "$PATCH_MANUAL_PROCESS_PID" =~ ^[0-9]+$ ]] || {
+        patch_error "Invalid isolated manual process identifier."
+        return 1
+    }
+
+    sleep 0.2
+
+    if [[ -f "$PATCH_MANUAL_PROCESS_STATUS_FILE" ]]; then
+        local early_exit_code
+        early_exit_code="$(patch_manual_process_exit_code)" || {
+            patch_error "Invalid manual process status file."
+            return 1
+        }
+
+        if ((early_exit_code != 0)); then
+            patch_error "The manual command exited early with code $early_exit_code. Log: $PATCH_MANUAL_PROCESS_LOG"
+            return "$early_exit_code"
+        fi
+    fi
+
+    patch_success "Manual command started in isolated session $PATCH_MANUAL_PROCESS_PID. Log: $PATCH_MANUAL_PROCESS_LOG"
+}
+
 patch_step PREREQUISITES "Checking patch workflow prerequisites."
 for command_name in bash git make dotnet python3 unzip sha256sum realpath; do
     require_command "$command_name"
 done
+[[ -f "$MANUAL_PROCESS_TOOL" ]] || {
+    patch_error "Required manual process helper not found: $MANUAL_PROCESS_TOOL"
+    exit 1
+}
+patch_success "Manual process helper available: $MANUAL_PROCESS_TOOL"
 [[ -f "$archive_path" ]] || {
     patch_error "Patch archive not found: $archive_path"
     exit 1
@@ -228,27 +331,6 @@ python3 "$PATCH_TOOL" validate-paths \
     --status-file "$post_status_file"
 patch_success "Post-patch status, modification count, files, and directories match the manifest."
 
-patch_step STAGE "Staging only manifest-authorized repository paths."
-mapfile -t stage_paths < <(
-    python3 "$PATCH_TOOL" list --manifest "$manifest_path" --path stage.paths
-)
-git -C "$REPOSITORY_ROOT" add -- "${stage_paths[@]}"
-staged_paths_file="$PATCH_SNAPSHOT_DIRECTORY/staged-paths.txt"
-git -C "$REPOSITORY_ROOT" diff --cached --name-only >"$staged_paths_file"
-printf '%s\n' "${stage_paths[@]}" | sort -u >"$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt"
-sort -u "$staged_paths_file" >"$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt"
-if ! diff -u \
-    "$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt" \
-    "$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt" \
-    >"$PATCH_COMMAND_LOG_DIRECTORY/staged-path-comparison.log"
-then
-    patch_error "Staged paths differ from the manifest. See staged-path-comparison.log."
-    exit 1
-fi
-patch_run_command staged-diff-check "git diff --cached --check" "$REPOSITORY_ROOT"
-patch_run_command staged-diff-stat "git --no-pager diff --cached --stat" "$REPOSITORY_ROOT"
-patch_run_command staged-status "git status --short --untracked-files=all" "$REPOSITORY_ROOT"
-
 patch_step VALIDATE "Running every configured validation command; failures are aggregated."
 VALIDATION_FAILURES=0
 while IFS=$'\t' read -r validation_name validation_command; do
@@ -275,12 +357,34 @@ if [[ "$manual_mode" != 'never' ]]; then
     manual_prompt="$(manifest_get manual_test.prompt)"
     if patch_prompt_yes_no "$manual_prompt" no; then
         manual_command="$(manifest_get manual_test.command)"
-        patch_run_command manual-test "$manual_command" "$REPOSITORY_ROOT"
+        patch_start_manual_process "$manual_command"
+
         acceptance_prompt="$(manifest_get manual_test.acceptance_prompt)"
         if ! patch_prompt_yes_no "$acceptance_prompt" no; then
+            patch_stop_manual_process
             patch_error "The manual application test was rejected."
             exit 1
         fi
+
+        if [[ -f "$PATCH_MANUAL_PROCESS_STATUS_FILE" ]]; then
+            manual_exit_code="$(patch_manual_process_exit_code)" || {
+                patch_stop_manual_process
+                patch_error "Invalid manual process status file."
+                exit 1
+            }
+
+            if ((manual_exit_code != 0)); then
+                patch_stop_manual_process
+                patch_error "The manual command failed with code $manual_exit_code. Log: $PATCH_MANUAL_PROCESS_LOG"
+                exit "$manual_exit_code"
+            fi
+        elif ! patch_manual_process_is_running; then
+            patch_stop_manual_process
+            patch_error "The manual command ended without a status result. Log: $PATCH_MANUAL_PROCESS_LOG"
+            exit 1
+        fi
+
+        patch_stop_manual_process
         patch_success "The manual application test was accepted."
     elif [[ "$manual_mode" == 'required' ]]; then
         patch_error "The manifest requires a manual application test before committing."
@@ -291,6 +395,28 @@ if [[ "$manual_mode" != 'never' ]]; then
 else
     patch_info "The manifest does not require an application test."
 fi
+
+patch_step STAGE "Staging only manifest-authorized repository paths."
+mapfile -t stage_paths < <(
+    python3 "$PATCH_TOOL" list --manifest "$manifest_path" --path stage.paths
+)
+git -C "$REPOSITORY_ROOT" add -- "${stage_paths[@]}"
+staged_paths_file="$PATCH_SNAPSHOT_DIRECTORY/staged-paths.txt"
+git -C "$REPOSITORY_ROOT" diff --cached --name-only >"$staged_paths_file"
+printf '%s\n' "${stage_paths[@]}" | sort -u >"$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt"
+sort -u "$staged_paths_file" >"$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt"
+if ! diff -u \
+    "$PATCH_SNAPSHOT_DIRECTORY/expected-staged-paths.txt" \
+    "$PATCH_SNAPSHOT_DIRECTORY/actual-staged-paths.txt" \
+    >"$PATCH_COMMAND_LOG_DIRECTORY/staged-path-comparison.log"
+then
+    patch_error "Staged paths differ from the manifest. See staged-path-comparison.log."
+    exit 1
+fi
+patch_run_command staged-diff-check "git diff --cached --check" "$REPOSITORY_ROOT"
+patch_run_command staged-diff-stat "git --no-pager diff --cached --stat" "$REPOSITORY_ROOT"
+patch_run_command staged-status "git status --short --untracked-files=all" "$REPOSITORY_ROOT"
+patch_run_command staged-safety "make --no-print-directory staged" "$REPOSITORY_ROOT"
 
 patch_step COMMIT "Generating the manifest-defined commit message and creating the signed commit."
 commit_enabled="$(manifest_get commit.enabled)"
