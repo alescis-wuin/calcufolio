@@ -11,10 +11,12 @@ public partial class MainWindow : Window
 {
     private readonly AvaloniaKeyboardInputRouter? _keyboardInputRouter;
     private readonly AvaloniaSelectionInputAdapter? _selectionInputAdapter;
+    private int _displaySynchronizationVersion;
 
     public MainWindow()
     {
         InitializeComponent();
+        ConfigureDisplay();
     }
 
     public MainWindow(
@@ -28,6 +30,7 @@ public partial class MainWindow : Window
         _selectionInputAdapter = selectionInputAdapter;
 
         InitializeComponent();
+        ConfigureDisplay();
 
         AddHandler(
             InputElement.KeyDownEvent,
@@ -50,11 +53,20 @@ public partial class MainWindow : Window
         Opened += OnOpened;
     }
 
+    private void ConfigureDisplay()
+    {
+        CalculatorDisplay.CaretBlinkInterval =
+            TimeSpan.Zero;
+
+        CalculatorDisplay.TextChanged +=
+            OnDisplayTextChanged;
+    }
+
     private void OnOpened(
         object? sender,
         EventArgs eventArgs)
     {
-        RestoreDisplayFocusAndSelection();
+        QueueDisplaySynchronization();
     }
 
     private async void OnKeyDown(
@@ -75,7 +87,7 @@ public partial class MainWindow : Window
             eventArgs.Key,
             eventArgs.KeyModifiers);
 
-        RestoreDisplayFocusAndSelection();
+        QueueDisplaySynchronization();
     }
 
     private void OnTextInput(
@@ -86,7 +98,7 @@ public partial class MainWindow : Window
                 eventArgs.Text) == true)
         {
             eventArgs.Handled = true;
-            RestoreDisplayFocusAndSelection();
+            QueueDisplaySynchronization();
         }
     }
 
@@ -97,28 +109,70 @@ public partial class MainWindow : Window
         _selectionInputAdapter?.Synchronize(
             CalculatorDisplay);
 
-        RestoreDisplayFocusAndSelection();
+        QueueDisplaySynchronization();
     }
 
-    private void RestoreDisplayFocusAndSelection()
+    private void OnDisplayTextChanged(
+        object? sender,
+        TextChangedEventArgs eventArgs)
     {
+        QueueDisplaySynchronization();
+    }
+
+    private void QueueDisplaySynchronization()
+    {
+        int synchronizationVersion =
+            ++_displaySynchronizationVersion;
+
         Dispatcher.UIThread.Post(
             () =>
             {
-                if (DataContext is MainViewModel viewModel)
+                if (synchronizationVersion !=
+                    _displaySynchronizationVersion)
                 {
-                    CalculatorDisplay.SelectionStart =
-                        viewModel.EditorSelectionStart;
-
-                    CalculatorDisplay.SelectionEnd =
-                        viewModel.EditorSelectionEnd;
-
-                    CalculatorDisplay.CaretIndex =
-                        viewModel.EditorCaretIndex;
+                    return;
                 }
 
-                CalculatorDisplay.Focus();
+                ApplyDisplaySynchronization();
             },
-            DispatcherPriority.Input);
+            DispatcherPriority.Render);
+    }
+
+    private void ApplyDisplaySynchronization()
+    {
+        if (DataContext is not MainViewModel viewModel)
+        {
+            CalculatorDisplay.Focus();
+            return;
+        }
+
+        int textLength =
+            CalculatorDisplay.Text?.Length ?? 0;
+
+        int caretIndex = Math.Clamp(
+            viewModel.EditorCaretIndex,
+            0,
+            textLength);
+
+        int selectionStart = Math.Clamp(
+            viewModel.EditorSelectionStart,
+            0,
+            textLength);
+
+        int selectionEnd = Math.Clamp(
+            viewModel.EditorSelectionEnd,
+            0,
+            textLength);
+
+        CalculatorDisplay.Focus();
+
+        CalculatorDisplay.CaretIndex =
+            caretIndex;
+
+        CalculatorDisplay.SelectionStart =
+            selectionStart;
+
+        CalculatorDisplay.SelectionEnd =
+            selectionEnd;
     }
 }

@@ -55,6 +55,97 @@ public sealed class CalculatorClipboardControllerTests
     }
 
     [Fact]
+    public async Task CutWritesSelectionAndDeletesIt()
+    {
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                Editor = new EditorState(
+                    "12345",
+                    4,
+                    1),
+            };
+
+        ClipboardTestContext context =
+            CreateContext(initialState);
+
+        await context.ClipboardController.CutAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            "234",
+            context.ClipboardPort.WrittenText);
+
+        Assert.Equal(
+            "15",
+            context.StateStore.Current.DisplayValue);
+
+        Assert.Equal(
+            1,
+            context.StateStore.Current.Editor.CaretIndex);
+
+        Assert.False(
+            context.StateStore.Current.Editor.HasSelection);
+    }
+
+    [Fact]
+    public async Task CutWithoutSelectionDoesNothing()
+    {
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                Editor = EditorState.FromText("12345"),
+            };
+
+        ClipboardTestContext context =
+            CreateContext(initialState);
+
+        await context.ClipboardController.CutAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.Null(
+            context.ClipboardPort.WrittenText);
+
+        Assert.Equal(
+            "12345",
+            context.StateStore.Current.DisplayValue);
+    }
+
+    [Fact]
+    public async Task CutDoesNotDeleteChangedEditorState()
+    {
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                Editor = new EditorState(
+                    "12345",
+                    4,
+                    1),
+            };
+
+        ClipboardTestContext context =
+            CreateContext(initialState);
+
+        context.ClipboardPort.AfterWrite = () =>
+        {
+            context.CalculatorController.Dispatch(
+                new EditInputAction(
+                    new InsertTextEditorAction("9")));
+        };
+
+        await context.ClipboardController.CutAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            "234",
+            context.ClipboardPort.WrittenText);
+
+        Assert.Equal(
+            "195",
+            context.StateStore.Current.DisplayValue);
+    }
+
+    [Fact]
     public async Task PasteReplacesInitialZero()
     {
         ClipboardTestContext context =
@@ -224,6 +315,8 @@ public sealed class CalculatorClipboardControllerTests
             Text = text;
         }
 
+        public Action? AfterWrite { get; set; }
+
         public string? Text { get; }
 
         public string? WrittenText { get; private set; }
@@ -243,6 +336,7 @@ public sealed class CalculatorClipboardControllerTests
             cancellationToken.ThrowIfCancellationRequested();
 
             WrittenText = text;
+            AfterWrite?.Invoke();
 
             return ValueTask.CompletedTask;
         }

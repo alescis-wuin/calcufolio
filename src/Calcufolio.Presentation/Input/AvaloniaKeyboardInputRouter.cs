@@ -28,6 +28,9 @@ public sealed class AvaloniaKeyboardInputRouter
         return CalculatorKeyboardInputMapper.IsCopyShortcut(
                 key,
                 modifiers) ||
+            CalculatorKeyboardInputMapper.IsCutShortcut(
+                key,
+                modifiers) ||
             CalculatorKeyboardInputMapper.IsPasteShortcut(
                 key,
                 modifiers) ||
@@ -53,6 +56,16 @@ public sealed class AvaloniaKeyboardInputRouter
                 modifiers))
         {
             await _clipboardController.CopyAsync(
+                cancellationToken);
+
+            return;
+        }
+
+        if (CalculatorKeyboardInputMapper.IsCutShortcut(
+                key,
+                modifiers))
+        {
+            await _clipboardController.CutAsync(
                 cancellationToken);
 
             return;

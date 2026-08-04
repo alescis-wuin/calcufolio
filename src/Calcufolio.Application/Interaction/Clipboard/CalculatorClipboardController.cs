@@ -1,6 +1,7 @@
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Actions;
+using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 
 namespace Calcufolio.Application.Interaction.Clipboard;
@@ -47,6 +48,31 @@ public sealed class CalculatorClipboardController : ICalculatorClipboardControll
         await _clipboardPort.WriteTextAsync(
             text,
             cancellationToken);
+    }
+
+    public async ValueTask CutAsync(
+        CancellationToken cancellationToken = default)
+    {
+        EditorState editor =
+            _stateStore.Current.Editor;
+
+        if (!editor.HasSelection)
+        {
+            return;
+        }
+
+        await _clipboardPort.WriteTextAsync(
+            editor.SelectedText,
+            cancellationToken);
+
+        if (_stateStore.Current.Editor != editor)
+        {
+            return;
+        }
+
+        _calculatorController.Dispatch(
+            new EditInputAction(
+                new BackspaceEditorAction()));
     }
 
     public async ValueTask PasteAsync(

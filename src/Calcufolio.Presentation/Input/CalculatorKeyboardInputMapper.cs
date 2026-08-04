@@ -131,6 +131,14 @@ public static class CalculatorKeyboardInputMapper
             HasPrimaryModifier(modifiers);
     }
 
+    public static bool IsCutShortcut(
+        Key key,
+        KeyModifiers modifiers)
+    {
+        return key == Key.X &&
+            HasPrimaryModifier(modifiers);
+    }
+
     public static bool IsPasteShortcut(
         Key key,
         KeyModifiers modifiers)

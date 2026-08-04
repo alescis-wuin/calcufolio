@@ -149,6 +149,18 @@ public sealed class CalculatorKeyboardInputMapperTests
     [Theory]
     [InlineData(KeyModifiers.Control)]
     [InlineData(KeyModifiers.Meta)]
+    public void IsCutShortcutRecognizesPrimaryModifier(
+        KeyModifiers modifiers)
+    {
+        Assert.True(
+            CalculatorKeyboardInputMapper.IsCutShortcut(
+                Key.X,
+                modifiers));
+    }
+
+    [Theory]
+    [InlineData(KeyModifiers.Control)]
+    [InlineData(KeyModifiers.Meta)]
     public void IsPasteShortcutRecognizesPrimaryModifier(
         KeyModifiers modifiers)
     {
@@ -164,6 +176,11 @@ public sealed class CalculatorKeyboardInputMapperTests
         Assert.False(
             CalculatorKeyboardInputMapper.IsCopyShortcut(
                 Key.C,
+                KeyModifiers.None));
+
+        Assert.False(
+            CalculatorKeyboardInputMapper.IsCutShortcut(
+                Key.X,
                 KeyModifiers.None));
 
         Assert.False(
