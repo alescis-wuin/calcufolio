@@ -17,8 +17,18 @@ section "Syntax validation"
 
 mapfile -d '' shell_files < <(
     find "$REPOSITORY_ROOT/scripts" "$REPOSITORY_ROOT/.githooks" \
-        -type f ! -name 'README.md' \
-        \( -name '*.sh' -o -perm -u+x \) -print0
+        -type f ! -name 'README.md' -print0 |
+        while IFS= read -r -d '' candidate; do
+            first_line=''
+
+            IFS= read -r first_line <"$candidate" || true
+
+            if [[ "$candidate" == *.sh ||
+                "$first_line" =~ ^\#\!.*(bash|dash|ksh|sh|zsh)([[:space:]]|$) ]]
+            then
+                printf '%s\0' "$candidate"
+            fi
+        done
 )
 
 if ((${#shell_files[@]} > 0)); then
@@ -28,15 +38,14 @@ else
     warning "No shell files were found."
 fi
 
-python - "$REPOSITORY_ROOT" <<'PYTHON'
+python3 - "$REPOSITORY_ROOT" <<'PYTHON'
 import json
-import py_compile
 import sys
 from pathlib import Path
 from xml.etree import ElementTree
 
 root = Path(sys.argv[1])
-excluded = {"bin", "obj", "artifacts", ".git", "logs"}
+excluded = {"bin", "obj", "artifacts", ".git", "logs", "__pycache__"}
 
 python_files = sorted(
     path for path in root.rglob("*.py")
@@ -61,7 +70,8 @@ xml_files = sorted(
 )
 
 for path in python_files:
-    py_compile.compile(path, doraise=True)
+    source = path.read_text(encoding="utf-8-sig")
+    compile(source, str(path), "exec")
 
 for path in json_files:
     with path.open(encoding="utf-8-sig") as stream:

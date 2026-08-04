@@ -160,9 +160,13 @@ linear-history: ## Reject merge commits introduced by the work branch
 	@BASE_REF="$(BASE_REF)" "$(CHECKS_DIRECTORY)/linear-history.sh"
 
 patch: ## Safely apply, validate, test, stage, and commit a patch package
-	@PATCH="$(PATCH)" \
+	@runtime_runner="$(PATCH_RUNNER).runtime.$$$$.sh"
+	trap 'rm -f -- "$$runtime_runner"' EXIT
+	cp -- "$(PATCH_RUNNER)" "$$runtime_runner"
+	chmod 700 "$$runtime_runner"
+	PATCH="$(PATCH)" \
 		PATCH_DOWNLOADS_DIR="$(PATCH_DOWNLOADS_DIR)" \
-		"$(PATCH_RUNNER)"
+		"$$runtime_runner"
 
 patch-validate: ## Validate an unpacked patch package directory
 	@test -n "$(PATCH_DIR)" || { printf 'PATCH_DIR is required.\n' >&2; exit 2; }
@@ -180,7 +184,7 @@ patch-pack: ## Generate checksums and create a patch ZIP archive
 	fi
 
 patch-self-test: ## Run patch workflow unit tests
-	@python3 -m unittest discover \
+	@PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
 		-s "$(ROOT)/scripts/patch/tests" \
 		-p 'test_*.py' \
 		-v

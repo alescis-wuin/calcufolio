@@ -106,5 +106,23 @@ class PatchToolTests(unittest.TestCase):
         self.assertTrue(message.endswith("Ticket: TEST-001\n"))
 
 
+def test_make_patch_uses_ignored_runtime_runner_copy(self) -> None:
+    repository_root = Path(__file__).resolve().parents[3]
+    makefile = (repository_root / "Makefile").read_text(encoding="utf-8")
+    gitignore = (repository_root / ".gitignore").read_text(encoding="utf-8")
+
+    self.assertIn(
+        'runtime_runner="$(PATCH_RUNNER).runtime.$$$$.sh"',
+        makefile,
+    )
+    self.assertIn(
+        '"$$runtime_runner"',
+        makefile,
+    )
+    self.assertIn(
+        "scripts/patch/apply-package.sh.runtime.*.sh",
+        gitignore,
+    )
+
 if __name__ == "__main__":
     unittest.main()
