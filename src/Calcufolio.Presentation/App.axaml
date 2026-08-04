@@ -101,6 +101,22 @@
       <Setter Property="FontSize" Value="22" />
     </Style>
 
+    <Style Selector="Button.calc-key:pressed">
+      <Setter Property="Background" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DarkTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CyanBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <Style Selector="Button.calc-key.keyboard-pressed">
+      <Setter Property="Background" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource DarkTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource CyanBrush}" />
+      <Setter Property="BorderThickness" Value="3" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
     <Style Selector="Border.toast">
       <Setter Property="Background" Value="{DynamicResource GreenBrush}" />
       <Setter Property="BorderBrush" Value="#B9FFDB" />

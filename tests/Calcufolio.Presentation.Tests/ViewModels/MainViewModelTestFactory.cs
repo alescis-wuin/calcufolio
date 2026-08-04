@@ -1,4 +1,5 @@
 using Calcufolio.Application.Interaction.Controller;
+using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 using Calcufolio.Presentation.ViewModels;
@@ -17,6 +18,7 @@ internal static class MainViewModelTestFactory
         ICalculatorController controller =
             new CalculatorController(
                 new CalculationEngine(),
+                new EditorStateReducer(),
                 stateStore);
 
         return new MainViewModel(

@@ -2,6 +2,9 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Calcufolio.Application.Calculations;
 using Calcufolio.Application.Interaction.Actions;
+using Calcufolio.Application.Interaction.Editor.Actions;
+using Calcufolio.Application.Interaction.Editor.Reducer;
+using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 
@@ -12,16 +15,20 @@ public sealed class CalculatorController : ICalculatorController
     private const int MaximumHistoryEntries = 20;
 
     private readonly ICalculationEngine _calculationEngine;
+    private readonly IEditorStateReducer _editorStateReducer;
     private readonly ICalculatorStateStore _stateStore;
 
     public CalculatorController(
         ICalculationEngine calculationEngine,
+        IEditorStateReducer editorStateReducer,
         ICalculatorStateStore stateStore)
     {
         ArgumentNullException.ThrowIfNull(calculationEngine);
+        ArgumentNullException.ThrowIfNull(editorStateReducer);
         ArgumentNullException.ThrowIfNull(stateStore);
 
         _calculationEngine = calculationEngine;
+        _editorStateReducer = editorStateReducer;
         _stateStore = stateStore;
     }
 
@@ -38,6 +45,10 @@ public sealed class CalculatorController : ICalculatorController
 
             case AppendDecimalSeparatorAction:
                 AppendDecimalSeparator();
+                break;
+
+            case EditInputAction editInput:
+                EditInput(editInput.EditorAction);
                 break;
 
             case SelectOperatorAction selectOperator:
@@ -66,14 +77,21 @@ public sealed class CalculatorController : ICalculatorController
         CalculatorState state =
             PrepareForValueInput(_stateStore.Current);
 
-        string displayValue = state.DisplayValue == "0"
-            ? digit
-            : $"{state.DisplayValue}{digit}";
+        EditorState editor = state.DisplayValue == "0"
+            ? _editorStateReducer.Reduce(
+                state.Editor,
+                new SelectAllEditorAction())
+            : state.Editor;
+
+        EditorState updatedEditor =
+            _editorStateReducer.Reduce(
+                editor,
+                new InsertTextEditorAction(digit));
 
         _stateStore.Replace(
             state with
             {
-                DisplayValue = displayValue,
+                Editor = updatedEditor,
             });
     }
 
@@ -90,10 +108,63 @@ public sealed class CalculatorController : ICalculatorController
             return;
         }
 
+        if (state.DisplayValue.Length == 0)
+        {
+            state = state with
+            {
+                Editor = EditorState.FromText("0"),
+            };
+        }
+
+        EditorState updatedEditor =
+            _editorStateReducer.Reduce(
+                state.Editor,
+                new InsertTextEditorAction("."));
+
         _stateStore.Replace(
             state with
             {
-                DisplayValue = $"{state.DisplayValue}.",
+                Editor = updatedEditor,
+            });
+    }
+
+    private void EditInput(
+        EditorAction editorAction)
+    {
+        CalculatorState state =
+            _stateStore.Current;
+
+        bool changesText =
+            editorAction is InsertTextEditorAction or
+            BackspaceEditorAction or
+            DeleteForwardEditorAction;
+
+        if (changesText)
+        {
+            state = PrepareForValueInput(state);
+        }
+
+        EditorState editor = state.Editor;
+
+        if (editorAction is InsertTextEditorAction &&
+            state.DisplayValue == "0" &&
+            !editor.HasSelection)
+        {
+            editor = _editorStateReducer.Reduce(
+                editor,
+                new SelectAllEditorAction());
+        }
+
+        EditorState updatedEditor =
+            _editorStateReducer.Reduce(
+                editor,
+                editorAction);
+
+        _stateStore.Replace(
+            state with
+            {
+                Editor = updatedEditor,
+                ReplaceDisplayOnNextInput = false,
             });
     }
 
@@ -113,7 +184,12 @@ public sealed class CalculatorController : ICalculatorController
         if (state.PendingOperation is not null &&
             !state.ReplaceDisplayOnNextInput)
         {
-            state = EvaluatePendingOperation(state);
+            if (!TryEvaluatePendingOperation(
+                    state,
+                    out state))
+            {
+                return;
+            }
 
             if (state.HasError)
             {
@@ -122,9 +198,19 @@ public sealed class CalculatorController : ICalculatorController
             }
         }
 
-        double leftOperand =
-            state.PendingOperation?.LeftOperand ??
-            ParseDisplayValue(state.DisplayValue);
+        double leftOperand;
+
+        if (state.PendingOperation is not null)
+        {
+            leftOperand =
+                state.PendingOperation.LeftOperand;
+        }
+        else if (!TryParseDisplayValue(
+                     state.DisplayValue,
+                     out leftOperand))
+        {
+            return;
+        }
 
         PendingBinaryOperation pendingOperation = new(
             leftOperand,
@@ -151,8 +237,14 @@ public sealed class CalculatorController : ICalculatorController
             return;
         }
 
-        _stateStore.Replace(
-            EvaluatePendingOperation(state));
+        if (!TryEvaluatePendingOperation(
+                state,
+                out CalculatorState evaluatedState))
+        {
+            return;
+        }
+
+        _stateStore.Replace(evaluatedState);
     }
 
     private void Clear()
@@ -161,16 +253,22 @@ public sealed class CalculatorController : ICalculatorController
             ResetCalculatorState(_stateStore.Current));
     }
 
-    private CalculatorState EvaluatePendingOperation(
-        CalculatorState state)
+    private bool TryEvaluatePendingOperation(
+        CalculatorState state,
+        out CalculatorState evaluatedState)
     {
         PendingBinaryOperation pendingOperation =
             state.PendingOperation ??
             throw new InvalidOperationException(
                 "No binary operation is pending.");
 
-        double rightOperand =
-            ParseDisplayValue(state.DisplayValue);
+        if (!TryParseDisplayValue(
+                state.DisplayValue,
+                out double rightOperand))
+        {
+            evaluatedState = state;
+            return false;
+        }
 
         string completedExpression =
             CreateCompletedExpression(
@@ -187,9 +285,9 @@ public sealed class CalculatorController : ICalculatorController
             string displayValue =
                 FormatNumber(result);
 
-            return state with
+            evaluatedState = state with
             {
-                DisplayValue = displayValue,
+                Editor = EditorState.FromText(displayValue),
                 Expression = completedExpression,
                 PendingOperation = null,
                 HasError = false,
@@ -199,18 +297,24 @@ public sealed class CalculatorController : ICalculatorController
                     completedExpression,
                     displayValue),
             };
+
+            return true;
         }
         catch (DivideByZeroException exception)
         {
-            return ShowError(
+            evaluatedState = ShowError(
                 state,
                 exception.Message);
+
+            return true;
         }
         catch (OverflowException exception)
         {
-            return ShowError(
+            evaluatedState = ShowError(
                 state,
                 exception.Message);
+
+            return true;
         }
     }
 
@@ -234,7 +338,7 @@ public sealed class CalculatorController : ICalculatorController
         return state with
         {
             Expression = expression,
-            DisplayValue = "0",
+            Editor = EditorState.FromText("0"),
             ReplaceDisplayOnNextInput = false,
         };
     }
@@ -255,7 +359,7 @@ public sealed class CalculatorController : ICalculatorController
         return state with
         {
             Expression = message,
-            DisplayValue = "Error",
+            Editor = EditorState.FromText("Error"),
             PendingOperation = null,
             HasError = true,
             ReplaceDisplayOnNextInput = true,
@@ -281,21 +385,16 @@ public sealed class CalculatorController : ICalculatorController
         return entries.AsReadOnly();
     }
 
-    private static double ParseDisplayValue(
-        string displayValue)
+    private static bool TryParseDisplayValue(
+        string displayValue,
+        out double value)
     {
-        if (!double.TryParse(
+        return double.TryParse(
                 displayValue,
                 NumberStyles.Float,
                 CultureInfo.InvariantCulture,
-                out double operand) ||
-            !double.IsFinite(operand))
-        {
-            throw new InvalidOperationException(
-                "The display does not contain a valid finite operand.");
-        }
-
-        return operand;
+                out value) &&
+            double.IsFinite(value);
     }
 
     private static string CreatePendingExpression(

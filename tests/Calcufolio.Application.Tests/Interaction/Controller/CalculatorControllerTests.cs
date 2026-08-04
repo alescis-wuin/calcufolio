@@ -2,6 +2,9 @@ using System.Globalization;
 using Calcufolio.Application.Calculations;
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Controller;
+using Calcufolio.Application.Interaction.Editor.Actions;
+using Calcufolio.Application.Interaction.Editor.Reducer;
+using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 
@@ -20,6 +23,71 @@ public sealed class CalculatorControllerTests
         Assert.Equal(
             "7",
             context.StateStore.Current.DisplayValue);
+    }
+
+    [Fact]
+    public void EditInputAppliesSelectionAndInsertion()
+    {
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                Editor = EditorState.FromText("42"),
+            };
+
+        TestContext context =
+            CreateContext(initialState);
+
+        context.Controller.Dispatch(
+            new EditInputAction(
+                new SetSelectionEditorAction(
+                    0,
+                    2)));
+
+        context.Controller.Dispatch(
+            new EditInputAction(
+                new InsertTextEditorAction("7")));
+
+        Assert.Equal(
+            "7",
+            context.StateStore.Current.DisplayValue);
+
+        Assert.Equal(
+            1,
+            context.StateStore.Current.Editor.CaretIndex);
+
+        Assert.False(
+            context.StateStore.Current.Editor.HasSelection);
+    }
+
+    [Fact]
+    public void EditInputMovementKeepsDisplayText()
+    {
+        CalculatorState initialState =
+            CalculatorState.Initial with
+            {
+                Editor = EditorState.FromText("123"),
+                ReplaceDisplayOnNextInput = true,
+            };
+
+        TestContext context =
+            CreateContext(initialState);
+
+        context.Controller.Dispatch(
+            new EditInputAction(
+                new MoveCaretEditorAction(
+                    -1,
+                    false)));
+
+        Assert.Equal(
+            "123",
+            context.StateStore.Current.DisplayValue);
+
+        Assert.Equal(
+            2,
+            context.StateStore.Current.Editor.CaretIndex);
+
+        Assert.False(
+            context.StateStore.Current.ReplaceDisplayOnNextInput);
     }
 
     [Fact]
@@ -261,9 +329,10 @@ public sealed class CalculatorControllerTests
         CalculatorState initialState =
             CalculatorState.Initial with
             {
-                DisplayValue = double.MaxValue.ToString(
-                    "R",
-                    CultureInfo.InvariantCulture),
+                Editor = EditorState.FromText(
+                    double.MaxValue.ToString(
+                        "R",
+                        CultureInfo.InvariantCulture)),
             };
 
         TestContext context =
@@ -290,16 +359,35 @@ public sealed class CalculatorControllerTests
     [Fact]
     public void ConstructorRejectsMissingCalculationEngine()
     {
+        EditorStateReducer editorStateReducer = new();
         CalculatorStateStore stateStore = new();
 
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(
                 () => new CalculatorController(
                     null!,
+                    editorStateReducer,
                     stateStore));
 
         Assert.Equal(
             "calculationEngine",
+            exception.ParamName);
+    }
+
+    [Fact]
+    public void ConstructorRejectsMissingEditorStateReducer()
+    {
+        CalculatorStateStore stateStore = new();
+
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(
+                () => new CalculatorController(
+                    new CalculationEngine(),
+                    null!,
+                    stateStore));
+
+        Assert.Equal(
+            "editorStateReducer",
             exception.ParamName);
     }
 
@@ -310,6 +398,7 @@ public sealed class CalculatorControllerTests
             Assert.Throws<ArgumentNullException>(
                 () => new CalculatorController(
                     new CalculationEngine(),
+                    new EditorStateReducer(),
                     null!));
 
         Assert.Equal(
@@ -326,6 +415,7 @@ public sealed class CalculatorControllerTests
 
         CalculatorController controller = new(
             new CalculationEngine(),
+            new EditorStateReducer(),
             stateStore);
 
         return new TestContext(
