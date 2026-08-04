@@ -1,3 +1,4 @@
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Clipboard;
 using Calcufolio.Application.Interaction.Controller;
@@ -6,6 +7,10 @@ using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
+using Calcufolio.Domain.Expressions;
+using Calcufolio.Domain.Expressions.Evaluation;
+using Calcufolio.Domain.Expressions.Lexing;
+using Calcufolio.Domain.Expressions.Parsing;
 
 namespace Calcufolio.Application.Tests.Interaction.Clipboard;
 
@@ -281,7 +286,7 @@ public sealed class CalculatorClipboardControllerTests
             new(initialState);
 
         CalculatorController calculatorController = new(
-            new CalculationEngine(),
+            CreateExpressionEvaluationService(),
             new EditorStateReducer(),
             stateStore);
 
@@ -299,6 +304,25 @@ public sealed class CalculatorClipboardControllerTests
             clipboardController,
             stateStore,
             clipboardPort);
+    }
+
+    private static ExpressionEvaluationService CreateExpressionEvaluationService()
+    {
+        ExpressionParser parser =
+            new(
+                new ExpressionTokenizer());
+
+        ExpressionEvaluator evaluator =
+            new(
+                new CalculationEngine());
+
+        ExpressionEngine engine =
+            new(
+                parser,
+                evaluator);
+
+        return new ExpressionEvaluationService(
+            engine);
     }
 
     private sealed record ClipboardTestContext(

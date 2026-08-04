@@ -1,11 +1,16 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.Clipboard;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.Preview;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
+using Calcufolio.Domain.Expressions;
+using Calcufolio.Domain.Expressions.Evaluation;
+using Calcufolio.Domain.Expressions.Lexing;
+using Calcufolio.Domain.Expressions.Parsing;
 using Calcufolio.Presentation.Input;
 using Calcufolio.Presentation.ViewModels;
 using Calcufolio.Presentation.Views;
@@ -26,6 +31,26 @@ public partial class App : global::Avalonia.Application
             ICalculationEngine calculationEngine =
                 new CalculationEngine();
 
+            IExpressionTokenizer expressionTokenizer =
+                new ExpressionTokenizer();
+
+            IExpressionParser expressionParser =
+                new ExpressionParser(
+                    expressionTokenizer);
+
+            IExpressionEvaluator expressionEvaluator =
+                new ExpressionEvaluator(
+                    calculationEngine);
+
+            IExpressionEngine expressionEngine =
+                new ExpressionEngine(
+                    expressionParser,
+                    expressionEvaluator);
+
+            IExpressionEvaluationService expressionEvaluationService =
+                new ExpressionEvaluationService(
+                    expressionEngine);
+
             IEditorStateReducer editorStateReducer =
                 new EditorStateReducer();
 
@@ -34,11 +59,11 @@ public partial class App : global::Avalonia.Application
 
             ICalculationPreviewService calculationPreviewService =
                 new CalculationPreviewService(
-                    calculationEngine);
+                    expressionEvaluationService);
 
             ICalculatorController controller =
                 new CalculatorController(
-                    calculationEngine,
+                    expressionEvaluationService,
                     editorStateReducer,
                     stateStore);
 

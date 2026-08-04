@@ -1,5 +1,6 @@
 using System.Globalization;
 using Calcufolio.Application.Calculations;
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
 
@@ -7,14 +8,14 @@ namespace Calcufolio.Application.Interaction.Preview;
 
 public sealed class CalculationPreviewService : ICalculationPreviewService
 {
-    private readonly ICalculationEngine _calculationEngine;
+    private readonly IExpressionEvaluationService _expressionEvaluationService;
 
     public CalculationPreviewService(
-        ICalculationEngine calculationEngine)
+        IExpressionEvaluationService expressionEvaluationService)
     {
-        ArgumentNullException.ThrowIfNull(calculationEngine);
+        ArgumentNullException.ThrowIfNull(expressionEvaluationService);
 
-        _calculationEngine = calculationEngine;
+        _expressionEvaluationService = expressionEvaluationService;
     }
 
     public CalculationPreview? Create(
@@ -33,10 +34,7 @@ public sealed class CalculationPreviewService : ICalculationPreviewService
             state.PendingOperation;
 
         if (!double.IsFinite(
-                pendingOperation.LeftOperand) ||
-            !TryParseDisplayValue(
-                state.DisplayValue,
-                out double rightOperand))
+                pendingOperation.LeftOperand))
         {
             return null;
         }
@@ -50,43 +48,40 @@ public sealed class CalculationPreviewService : ICalculationPreviewService
             return null;
         }
 
-        try
-        {
-            double result =
-                _calculationEngine.Calculate(
-                    pendingOperation.LeftOperand,
-                    pendingOperation.Operation,
-                    rightOperand);
+        string evaluationExpression =
+            $"{FormatEvaluationNumber(pendingOperation.LeftOperand)} " +
+            $"{operatorSymbol} {state.DisplayValue}";
 
-            string expression =
-                $"{FormatNumber(pendingOperation.LeftOperand)} " +
-                $"{operatorSymbol} " +
-                $"{FormatNumber(rightOperand)} =";
+        ExpressionEvaluationResult result =
+            _expressionEvaluationService.Evaluate(
+                evaluationExpression);
 
-            return new CalculationPreview(
-                expression,
-                FormatNumber(result));
-        }
-        catch (DivideByZeroException)
+        if (!result.IsSuccess ||
+            result.DisplayValue is not string displayValue)
         {
             return null;
         }
-        catch (OverflowException)
-        {
-            return null;
-        }
+
+        string displayExpression =
+            $"{FormatNumber(pendingOperation.LeftOperand)} " +
+            $"{operatorSymbol} {state.DisplayValue} =";
+
+        return new CalculationPreview(
+            displayExpression,
+            displayValue);
     }
 
-    private static bool TryParseDisplayValue(
-        string displayValue,
-        out double value)
+    private static string FormatEvaluationNumber(
+        double value)
     {
-        return double.TryParse(
-                displayValue,
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out value) &&
-            double.IsFinite(value);
+        if (value == 0.0)
+        {
+            return "0";
+        }
+
+        return value.ToString(
+            "R",
+            CultureInfo.InvariantCulture);
     }
 
     private static string FormatNumber(

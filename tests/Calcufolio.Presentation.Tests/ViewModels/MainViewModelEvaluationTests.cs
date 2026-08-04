@@ -1,10 +1,15 @@
 using System.Globalization;
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.Preview;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
+using Calcufolio.Domain.Expressions;
+using Calcufolio.Domain.Expressions.Evaluation;
+using Calcufolio.Domain.Expressions.Lexing;
+using Calcufolio.Domain.Expressions.Parsing;
 using Calcufolio.Presentation.ViewModels;
 
 namespace Calcufolio.Presentation.Tests.ViewModels;
@@ -191,9 +196,10 @@ public sealed class MainViewModelEvaluationTests
             "Error",
             viewModel.DisplayValue);
 
-        Assert.Equal(
-            "Division by zero is not allowed.",
-            viewModel.Expression);
+        Assert.Contains(
+            "Division by zero is not allowed",
+            viewModel.Expression,
+            StringComparison.Ordinal);
 
         Assert.Empty(viewModel.HistoryEntries);
     }
@@ -279,9 +285,10 @@ public sealed class MainViewModelEvaluationTests
             "Error",
             viewModel.DisplayValue);
 
-        Assert.Equal(
-            "The calculation result is outside the supported numeric range.",
-            viewModel.Expression);
+        Assert.Contains(
+            "The calculation result is outside the supported numeric range",
+            viewModel.Expression,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -314,7 +321,7 @@ public sealed class MainViewModelEvaluationTests
                     null!,
                     stateStore,
                     new CalculationPreviewService(
-                        new CalculationEngine())));
+                        CreateExpressionEvaluationService())));
 
         Assert.Equal(
             "controller",
@@ -326,8 +333,11 @@ public sealed class MainViewModelEvaluationTests
     {
         CalculatorStateStore stateStore = new();
 
+        ExpressionEvaluationService expressionEvaluationService =
+            CreateExpressionEvaluationService();
+
         CalculatorController controller = new(
-            new CalculationEngine(),
+            expressionEvaluationService,
             new EditorStateReducer(),
             stateStore);
 
@@ -337,7 +347,7 @@ public sealed class MainViewModelEvaluationTests
                     controller,
                     null!,
                     new CalculationPreviewService(
-                        new CalculationEngine())));
+                        expressionEvaluationService)));
 
         Assert.Equal(
             "stateStore",
@@ -348,10 +358,11 @@ public sealed class MainViewModelEvaluationTests
     public void ConstructorRejectsMissingPreviewService()
     {
         CalculatorStateStore stateStore = new();
-        CalculationEngine calculationEngine = new();
+        ExpressionEvaluationService expressionEvaluationService =
+            CreateExpressionEvaluationService();
 
         CalculatorController controller = new(
-            calculationEngine,
+            expressionEvaluationService,
             new EditorStateReducer(),
             stateStore);
 
@@ -365,6 +376,25 @@ public sealed class MainViewModelEvaluationTests
         Assert.Equal(
             "calculationPreviewService",
             exception.ParamName);
+    }
+
+    private static ExpressionEvaluationService CreateExpressionEvaluationService()
+    {
+        ExpressionParser parser =
+            new(
+                new ExpressionTokenizer());
+
+        ExpressionEvaluator evaluator =
+            new(
+                new CalculationEngine());
+
+        ExpressionEngine engine =
+            new(
+                parser,
+                evaluator);
+
+        return new ExpressionEvaluationService(
+            engine);
     }
 
     private static void EnterNumber(

@@ -1,8 +1,13 @@
 using Calcufolio.Application.Calculations;
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.Preview;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
+using Calcufolio.Domain.Expressions;
+using Calcufolio.Domain.Expressions.Evaluation;
+using Calcufolio.Domain.Expressions.Lexing;
+using Calcufolio.Domain.Expressions.Parsing;
 
 namespace Calcufolio.Application.Tests.Interaction.Preview;
 
@@ -226,7 +231,7 @@ public sealed class CalculationPreviewServiceTests
     }
 
     [Fact]
-    public void ConstructorRejectsMissingCalculationEngine()
+    public void ConstructorRejectsMissingExpressionEvaluationService()
     {
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(
@@ -234,7 +239,7 @@ public sealed class CalculationPreviewServiceTests
                     null!));
 
         Assert.Equal(
-            "calculationEngine",
+            "expressionEvaluationService",
             exception.ParamName);
     }
 
@@ -256,8 +261,28 @@ public sealed class CalculationPreviewServiceTests
 
     private static CalculationPreviewService CreateService()
     {
+        IExpressionTokenizer tokenizer =
+            new ExpressionTokenizer();
+
+        IExpressionParser parser =
+            new ExpressionParser(
+                tokenizer);
+
+        IExpressionEvaluator evaluator =
+            new ExpressionEvaluator(
+                new CalculationEngine());
+
+        IExpressionEngine engine =
+            new ExpressionEngine(
+                parser,
+                evaluator);
+
+        IExpressionEvaluationService service =
+            new ExpressionEvaluationService(
+                engine);
+
         return new CalculationPreviewService(
-            new CalculationEngine());
+            service);
     }
 
     private static CalculatorState CreateState(
