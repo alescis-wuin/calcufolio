@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Actions;
+using Calcufolio.Application.Interaction.Preview;
 using Calcufolio.Application.Interaction.State;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,16 +12,20 @@ namespace Calcufolio.Presentation.ViewModels;
 public sealed partial class MainViewModel : ViewModelBase
 {
     private readonly ICalculatorController _controller;
+    private readonly ICalculationPreviewService _calculationPreviewService;
     private readonly ObservableCollection<CalculationHistoryEntryViewModel> _historyEntries = [];
 
     public MainViewModel(
         ICalculatorController controller,
-        ICalculatorStateStore stateStore)
+        ICalculatorStateStore stateStore,
+        ICalculationPreviewService calculationPreviewService)
     {
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(stateStore);
+        ArgumentNullException.ThrowIfNull(calculationPreviewService);
 
         _controller = controller;
+        _calculationPreviewService = calculationPreviewService;
 
         HistoryEntries =
             new ReadOnlyObservableCollection<CalculationHistoryEntryViewModel>(
@@ -33,6 +38,9 @@ public sealed partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial string Expression { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string DisplayExpression { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string DisplayValue { get; set; } = "0";
@@ -120,6 +128,13 @@ public sealed partial class MainViewModel : ViewModelBase
     {
         Expression = state.Expression;
         DisplayValue = state.DisplayValue;
+
+        CalculationPreview? calculationPreview =
+            _calculationPreviewService.Create(state);
+
+        DisplayExpression =
+            calculationPreview?.DisplayText ??
+            state.Expression;
 
         EditorCaretIndex =
             state.Editor.CaretIndex;
