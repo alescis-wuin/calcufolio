@@ -63,6 +63,25 @@ class PatchWorkflowTests(unittest.TestCase):
             runner[stage_start:commit_start],
         )
 
+    def test_manual_test_uses_isolated_process(self) -> None:
+        runner = (
+            PATCH_DIRECTORY /
+            "apply-package.sh"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "patch_start_manual_process",
+            runner,
+        )
+        self.assertIn(
+            "patch_stop_manual_process",
+            runner,
+        )
+        self.assertIn(
+            "manual_process.py",
+            runner,
+        )
+
     def test_required_manual_rejection_keeps_changes_unstaged(
         self,
     ) -> None:
@@ -253,6 +272,7 @@ class PatchWorkflowTests(unittest.TestCase):
 
         for relative_path in [
             Path("apply-package.sh"),
+            Path("manual_process.py"),
             Path("patch_tool.py"),
             Path("lib/logging.sh"),
         ]:
@@ -275,6 +295,7 @@ class PatchWorkflowTests(unittest.TestCase):
             "--",
             "scripts/patch/apply-package.sh",
             "scripts/patch/lib/logging.sh",
+            "scripts/patch/manual_process.py",
             "scripts/patch/patch_tool.py",
         )
         self._git(

@@ -112,3 +112,5 @@ make patch-self-test
 - `PATCH_DOWNLOADS_DIR=/path`: override `~/Téléchargements`.
 
 A required manual test always blocks the commit when it is skipped or rejected. Automated and manual validation run before staging, so rejected or interrupted manual checks preserve authorized changes as unstaged worktree modifications.
+
+Interactive application commands run in a dedicated process session. The runner remains available for the acceptance prompt and stops the complete child process group after acceptance, rejection, or workflow interruption. Application output is stored in the manual-test command log; stopping the application with `Ctrl+C` is not required.
