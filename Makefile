@@ -9,22 +9,33 @@ PRESENTATION_PROJECT := $(ROOT)/src/Calcufolio.Presentation/Calcufolio.Presentat
 COMMON_SCRIPT := $(ROOT)/scripts/lib/common.sh
 HOOK_INSTALLER := $(ROOT)/scripts/hooks/install.sh
 CHECKS_DIRECTORY := $(ROOT)/scripts/checks
+PATCH_RUNNER := $(ROOT)/scripts/patch/apply-package.sh
+PATCH_TOOL := $(ROOT)/scripts/patch/patch_tool.py
 
 CONFIGURATION ?= Debug
 BASE_REF ?= origin/develop
+PATCH ?=
+PATCH_DOWNLOADS_DIR ?= $(HOME)/Téléchargements
+PATCH_DIR ?=
+PATCH_OUTPUT ?=
 
 .PHONY: \
 	help doctor hooks-install hooks-check \
 	clean restore build rebuild run test status \
 	git-check branch-check staged syntax format format-check lint audit \
-	signatures linear-history verify-fast verify
+	signatures linear-history verify-fast verify \
+	patch patch-validate patch-pack patch-self-test
 
 help: ## Show the available commands
 	@printf '\nAvailable commands:\n\n'
 	@awk 'BEGIN { FS = ":.*## " } /^[a-zA-Z0-9_.-]+:.*## / { printf "  %-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@printf '\nOptional variables:\n\n'
 	@printf '  CONFIGURATION=Debug|Release\n'
-	@printf '  BASE_REF=origin/develop\n\n'
+	@printf '  BASE_REF=origin/develop\n'
+	@printf '  PATCH=<archive-name-without-.zip>\n'
+	@printf '  PATCH_DOWNLOADS_DIR=$$HOME/Téléchargements\n'
+	@printf '  PATCH_DIR=/path/to/unpacked/package\n'
+	@printf '  PATCH_OUTPUT=/path/to/package.zip\n\n'
 
 doctor: ## Audit the local development environment
 	@source "$(COMMON_SCRIPT)"
@@ -121,7 +132,7 @@ branch-check: ## Enforce work branch naming and protection rules
 staged: ## Validate staged file safety
 	@"$(CHECKS_DIRECTORY)/staged-files.sh"
 
-syntax: ## Validate Bash, JSON, XML, and Makefile syntax
+syntax: ## Validate Bash, Python, JSON, XML, and Makefile syntax
 	@"$(CHECKS_DIRECTORY)/syntax.sh"
 
 format: restore ## Apply .NET formatting and analyzer fixes
@@ -147,6 +158,36 @@ signatures: ## Verify signatures of branch commits
 
 linear-history: ## Reject merge commits introduced by the work branch
 	@BASE_REF="$(BASE_REF)" "$(CHECKS_DIRECTORY)/linear-history.sh"
+
+patch: ## Safely apply, validate, test, stage, and commit a patch package
+	@runtime_runner="$(PATCH_RUNNER).runtime.$$$$.sh"
+	trap 'rm -f -- "$$runtime_runner"' EXIT
+	cp -- "$(PATCH_RUNNER)" "$$runtime_runner"
+	chmod 700 "$$runtime_runner"
+	PATCH="$(PATCH)" \
+		PATCH_DOWNLOADS_DIR="$(PATCH_DOWNLOADS_DIR)" \
+		"$$runtime_runner"
+
+patch-validate: ## Validate an unpacked patch package directory
+	@test -n "$(PATCH_DIR)" || { printf 'PATCH_DIR is required.\n' >&2; exit 2; }
+	@python3 "$(PATCH_TOOL)" validate-dir --package-dir "$(PATCH_DIR)"
+
+patch-pack: ## Generate checksums and create a patch ZIP archive
+	@test -n "$(PATCH_DIR)" || { printf 'PATCH_DIR is required.\n' >&2; exit 2; }
+	@if [[ -n "$(PATCH_OUTPUT)" ]]; then
+		python3 "$(PATCH_TOOL)" pack \
+			--package-dir "$(PATCH_DIR)" \
+			--output "$(PATCH_OUTPUT)"
+	else
+		python3 "$(PATCH_TOOL)" pack \
+			--package-dir "$(PATCH_DIR)"
+	fi
+
+patch-self-test: ## Run patch workflow unit tests
+	@PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+		-s "$(ROOT)/scripts/patch/tests" \
+		-p 'test_*.py' \
+		-v
 
 verify-fast: ## Run fast checks suitable before a commit
 	@$(MAKE) --no-print-directory \

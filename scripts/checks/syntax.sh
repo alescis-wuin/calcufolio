@@ -17,8 +17,18 @@ section "Syntax validation"
 
 mapfile -d '' shell_files < <(
     find "$REPOSITORY_ROOT/scripts" "$REPOSITORY_ROOT/.githooks" \
-        -type f ! -name 'README.md' \
-        \( -name '*.sh' -o -perm -u+x \) -print0
+        -type f ! -name 'README.md' -print0 |
+        while IFS= read -r -d '' candidate; do
+            first_line=''
+
+            IFS= read -r first_line <"$candidate" || true
+
+            if [[ "$candidate" == *.sh ||
+                "$first_line" =~ ^\#\!.*(bash|dash|ksh|sh|zsh)([[:space:]]|$) ]]
+            then
+                printf '%s\0' "$candidate"
+            fi
+        done
 )
 
 if ((${#shell_files[@]} > 0)); then
@@ -28,14 +38,19 @@ else
     warning "No shell files were found."
 fi
 
-python - "$REPOSITORY_ROOT" <<'PY'
+python3 - "$REPOSITORY_ROOT" <<'PYTHON'
 import json
 import sys
 from pathlib import Path
 from xml.etree import ElementTree
 
 root = Path(sys.argv[1])
-excluded = {"bin", "obj", "artifacts", ".git"}
+excluded = {"bin", "obj", "artifacts", ".git", "logs", "__pycache__"}
+
+python_files = sorted(
+    path for path in root.rglob("*.py")
+    if not excluded.intersection(path.parts)
+)
 
 json_files = sorted(
     path for path in root.rglob("*.json")
@@ -54,6 +69,10 @@ xml_files = sorted(
     and not excluded.intersection(path.parts)
 )
 
+for path in python_files:
+    source = path.read_text(encoding="utf-8-sig")
+    compile(source, str(path), "exec")
+
 for path in json_files:
     with path.open(encoding="utf-8-sig") as stream:
         json.load(stream)
@@ -61,9 +80,10 @@ for path in json_files:
 for path in xml_files:
     ElementTree.parse(path)
 
+print(f"[OK] Python syntax is valid for {len(python_files)} file(s).")
 print(f"[OK] JSON syntax is valid for {len(json_files)} file(s).")
 print(f"[OK] XML syntax is valid for {len(xml_files)} file(s).")
-PY
+PYTHON
 
 make --no-print-directory --dry-run help >/dev/null
 success "Makefile syntax is valid."

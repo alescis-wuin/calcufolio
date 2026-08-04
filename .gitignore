@@ -32,6 +32,10 @@ packages/
 logs/
 *.log
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Bases de données locales
 *.db
 *.db-shm
@@ -45,6 +49,9 @@ logs/
 !.env.example
 appsettings.Local.json
 secrets.json
+
+# Exécution isolée du workflow de patch
+scripts/patch/apply-package.sh.runtime.*.sh
 
 # Fichiers temporaires
 *.tmp
