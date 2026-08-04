@@ -1,5 +1,6 @@
 using System.Globalization;
 using Calcufolio.Application.Calculations;
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Controller;
 using Calcufolio.Application.Interaction.Editor.Actions;
@@ -7,6 +8,10 @@ using Calcufolio.Application.Interaction.Editor.Reducer;
 using Calcufolio.Application.Interaction.Editor.State;
 using Calcufolio.Application.Interaction.State;
 using Calcufolio.Domain.Calculations;
+using Calcufolio.Domain.Expressions;
+using Calcufolio.Domain.Expressions.Evaluation;
+using Calcufolio.Domain.Expressions.Lexing;
+using Calcufolio.Domain.Expressions.Parsing;
 
 namespace Calcufolio.Application.Tests.Interaction.Controller;
 
@@ -219,9 +224,10 @@ public sealed class CalculatorControllerTests
             "Error",
             state.DisplayValue);
 
-        Assert.Equal(
-            "Division by zero is not allowed.",
-            state.Expression);
+        Assert.Contains(
+            "Division by zero is not allowed",
+            state.Expression,
+            StringComparison.Ordinal);
 
         Assert.Null(state.PendingOperation);
     }
@@ -351,13 +357,14 @@ public sealed class CalculatorControllerTests
             "Error",
             context.StateStore.Current.DisplayValue);
 
-        Assert.Equal(
-            "The calculation result is outside the supported numeric range.",
-            context.StateStore.Current.Expression);
+        Assert.Contains(
+            "The calculation result is outside the supported numeric range",
+            context.StateStore.Current.Expression,
+            StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ConstructorRejectsMissingCalculationEngine()
+    public void ConstructorRejectsMissingExpressionEvaluationService()
     {
         EditorStateReducer editorStateReducer = new();
         CalculatorStateStore stateStore = new();
@@ -370,7 +377,7 @@ public sealed class CalculatorControllerTests
                     stateStore));
 
         Assert.Equal(
-            "calculationEngine",
+            "expressionEvaluationService",
             exception.ParamName);
     }
 
@@ -382,7 +389,7 @@ public sealed class CalculatorControllerTests
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(
                 () => new CalculatorController(
-                    new CalculationEngine(),
+                    CreateExpressionEvaluationService(),
                     null!,
                     stateStore));
 
@@ -397,7 +404,7 @@ public sealed class CalculatorControllerTests
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(
                 () => new CalculatorController(
-                    new CalculationEngine(),
+                    CreateExpressionEvaluationService(),
                     new EditorStateReducer(),
                     null!));
 
@@ -414,13 +421,35 @@ public sealed class CalculatorControllerTests
             : new CalculatorStateStore(initialState);
 
         CalculatorController controller = new(
-            new CalculationEngine(),
+            CreateExpressionEvaluationService(),
             new EditorStateReducer(),
             stateStore);
 
         return new TestContext(
             controller,
             stateStore);
+    }
+
+    private static ExpressionEvaluationService CreateExpressionEvaluationService()
+    {
+        IExpressionTokenizer tokenizer =
+            new ExpressionTokenizer();
+
+        IExpressionParser parser =
+            new ExpressionParser(
+                tokenizer);
+
+        IExpressionEvaluator evaluator =
+            new ExpressionEvaluator(
+                new CalculationEngine());
+
+        IExpressionEngine engine =
+            new ExpressionEngine(
+                parser,
+                evaluator);
+
+        return new ExpressionEvaluationService(
+            engine);
     }
 
     private static void EnterNumber(

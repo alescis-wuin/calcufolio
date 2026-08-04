@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Calcufolio.Application.Calculations;
+using Calcufolio.Application.Expressions;
 using Calcufolio.Application.Interaction.Actions;
 using Calcufolio.Application.Interaction.Editor.Actions;
 using Calcufolio.Application.Interaction.Editor.Reducer;
@@ -14,20 +15,20 @@ public sealed class CalculatorController : ICalculatorController
 {
     private const int MaximumHistoryEntries = 20;
 
-    private readonly ICalculationEngine _calculationEngine;
+    private readonly IExpressionEvaluationService _expressionEvaluationService;
     private readonly IEditorStateReducer _editorStateReducer;
     private readonly ICalculatorStateStore _stateStore;
 
     public CalculatorController(
-        ICalculationEngine calculationEngine,
+        IExpressionEvaluationService expressionEvaluationService,
         IEditorStateReducer editorStateReducer,
         ICalculatorStateStore stateStore)
     {
-        ArgumentNullException.ThrowIfNull(calculationEngine);
+        ArgumentNullException.ThrowIfNull(expressionEvaluationService);
         ArgumentNullException.ThrowIfNull(editorStateReducer);
         ArgumentNullException.ThrowIfNull(stateStore);
 
-        _calculationEngine = calculationEngine;
+        _expressionEvaluationService = expressionEvaluationService;
         _editorStateReducer = editorStateReducer;
         _stateStore = stateStore;
     }
@@ -275,47 +276,45 @@ public sealed class CalculatorController : ICalculatorController
                 pendingOperation,
                 rightOperand);
 
-        try
+        ExpressionEvaluationResult result =
+            _expressionEvaluationService.Evaluate(
+                CreateEvaluationExpression(
+                    pendingOperation,
+                    rightOperand));
+
+        if (!result.IsSuccess)
         {
-            double result = _calculationEngine.Calculate(
-                pendingOperation.LeftOperand,
-                pendingOperation.Operation,
-                rightOperand);
+            ExpressionEvaluationError error =
+                result.Error ??
+                throw new InvalidOperationException(
+                    "A failed expression result must contain an error.");
 
-            string displayValue =
-                FormatNumber(result);
-
-            evaluatedState = state with
-            {
-                Editor = EditorState.FromText(displayValue),
-                Expression = completedExpression,
-                PendingOperation = null,
-                HasError = false,
-                ReplaceDisplayOnNextInput = true,
-                HistoryEntries = AddHistory(
-                    state.HistoryEntries,
-                    completedExpression,
-                    displayValue),
-            };
-
-            return true;
-        }
-        catch (DivideByZeroException exception)
-        {
             evaluatedState = ShowError(
                 state,
-                exception.Message);
+                error.Message);
 
             return true;
         }
-        catch (OverflowException exception)
+
+        string displayValue =
+            result.DisplayValue ??
+            throw new InvalidOperationException(
+                "A successful expression result must contain display text.");
+
+        evaluatedState = state with
         {
-            evaluatedState = ShowError(
-                state,
-                exception.Message);
+            Editor = EditorState.FromText(displayValue),
+            Expression = completedExpression,
+            PendingOperation = null,
+            HasError = false,
+            ReplaceDisplayOnNextInput = true,
+            HistoryEntries = AddHistory(
+                state.HistoryEntries,
+                completedExpression,
+                displayValue),
+        };
 
-            return true;
-        }
+        return true;
     }
 
     private static CalculatorState PrepareForValueInput(
@@ -404,6 +403,15 @@ public sealed class CalculatorController : ICalculatorController
             $"{ToDisplaySymbol(pendingOperation.Operation)}";
     }
 
+    private static string CreateEvaluationExpression(
+        PendingBinaryOperation pendingOperation,
+        double rightOperand)
+    {
+        return $"{FormatEvaluationNumber(pendingOperation.LeftOperand)} " +
+            $"{ToDisplaySymbol(pendingOperation.Operation)} " +
+            FormatEvaluationNumber(rightOperand);
+    }
+
     private static string CreateCompletedExpression(
         PendingBinaryOperation pendingOperation,
         double rightOperand)
@@ -411,6 +419,19 @@ public sealed class CalculatorController : ICalculatorController
         return $"{FormatNumber(pendingOperation.LeftOperand)} " +
             $"{ToDisplaySymbol(pendingOperation.Operation)} " +
             $"{FormatNumber(rightOperand)} =";
+    }
+
+    private static string FormatEvaluationNumber(
+        double value)
+    {
+        if (value == 0.0)
+        {
+            return "0";
+        }
+
+        return value.ToString(
+            "R",
+            CultureInfo.InvariantCulture);
     }
 
     private static string FormatNumber(
