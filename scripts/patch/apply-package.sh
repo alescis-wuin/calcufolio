@@ -8,6 +8,7 @@ readonly REPOSITORY_ROOT
 readonly PATCH_TOOL="$SCRIPT_DIRECTORY/patch_tool.py"
 readonly MANUAL_PROCESS_TOOL="$SCRIPT_DIRECTORY/manual_process.py"
 readonly LOGGING_LIBRARY="$SCRIPT_DIRECTORY/lib/logging.sh"
+readonly DOTNET_VERIFY="$REPOSITORY_ROOT/scripts/toolchain/verify-dotnet.sh"
 
 # shellcheck disable=SC1090
 source "$LOGGING_LIBRARY"
@@ -195,9 +196,19 @@ patch_start_manual_process()
 }
 
 patch_step PREREQUISITES "Checking patch workflow prerequisites."
-for command_name in bash git make dotnet python3 unzip sha256sum realpath; do
+for command_name in bash git make python3 unzip sha256sum realpath; do
     require_command "$command_name"
 done
+[[ -x "$DOTNET_VERIFY" ]] || {
+    patch_error "Required .NET toolchain verifier not found: $DOTNET_VERIFY"
+    exit 1
+}
+if ! "$DOTNET_VERIFY"; then
+    patch_error "No compatible repository .NET SDK is available."
+    patch_error "Run make toolchain-bootstrap before applying patches."
+    exit 1
+fi
+patch_success "Repository .NET toolchain verified: $DOTNET_VERIFY"
 [[ -f "$MANUAL_PROCESS_TOOL" ]] || {
     patch_error "Required manual process helper not found: $MANUAL_PROCESS_TOOL"
     exit 1

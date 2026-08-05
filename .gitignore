@@ -4,6 +4,12 @@
 artifacts/
 publish/
 
+# Toolchain .NET locale au dépôt
+.dotnet/
+.dotnet.bootstrap.lock/
+.toolchain-cache/
+.support/
+
 # Rider et IntelliJ
 .idea/
 *.sln.iml
