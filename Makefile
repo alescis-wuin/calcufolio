@@ -11,6 +11,12 @@ HOOK_INSTALLER := $(ROOT)/scripts/hooks/install.sh
 CHECKS_DIRECTORY := $(ROOT)/scripts/checks
 PATCH_RUNNER := $(ROOT)/scripts/patch/apply-package.sh
 PATCH_TOOL := $(ROOT)/scripts/patch/patch_tool.py
+DOTNET := $(ROOT)/scripts/toolchain/dotnet.sh
+TOOLCHAIN_BOOTSTRAP := $(ROOT)/scripts/toolchain/bootstrap-dotnet.sh
+TOOLCHAIN_RESOLVER := $(ROOT)/scripts/toolchain/resolve-dotnet.sh
+TOOLCHAIN_VERIFY := $(ROOT)/scripts/toolchain/verify-dotnet.sh
+TOOLCHAIN_TESTS := $(ROOT)/scripts/toolchain/tests/run.sh
+TOOLCHAIN_INTEGRATION_TESTS := $(ROOT)/scripts/toolchain/tests/integration.sh
 
 CONFIGURATION ?= Debug
 BASE_REF ?= origin/develop
@@ -18,9 +24,14 @@ PATCH ?=
 PATCH_DOWNLOADS_DIR ?= $(HOME)/Téléchargements
 PATCH_DIR ?=
 PATCH_OUTPUT ?=
+TOOLCHAIN_ARCHIVE ?=
+TOOLCHAIN_SHA256 ?=
+TOOLCHAIN_OFFLINE_ONLY ?= 0
+TOOLCHAIN_FORCE ?= 0
 
 .PHONY: \
-	help doctor hooks-install hooks-check \
+	help doctor toolchain-bootstrap toolchain-check toolchain-info \
+	toolchain-clean toolchain-self-test hooks-install hooks-check \
 	clean restore build rebuild run test status \
 	git-check branch-check worktree-clean staged syntax format format-check lint audit \
 	signatures linear-history verify-fast verify verify-push \
@@ -35,7 +46,11 @@ help: ## Show the available commands
 	@printf '  PATCH=<archive-name-without-.zip>\n'
 	@printf '  PATCH_DOWNLOADS_DIR=$$HOME/Téléchargements\n'
 	@printf '  PATCH_DIR=/path/to/unpacked/package\n'
-	@printf '  PATCH_OUTPUT=/path/to/package.zip\n\n'
+	@printf '  PATCH_OUTPUT=/path/to/package.zip\n'
+	@printf '  TOOLCHAIN_ARCHIVE=/path/to/dotnet-sdk.tar.gz\n'
+	@printf '  TOOLCHAIN_SHA256=<64-character-sha256>\n'
+	@printf '  TOOLCHAIN_OFFLINE_ONLY=0|1\n'
+	@printf '  TOOLCHAIN_FORCE=0|1\n\n'
 
 doctor: ## Audit the local development environment
 	@source "$(COMMON_SCRIPT)"
@@ -44,12 +59,15 @@ doctor: ## Audit the local development environment
 	require_command git
 	require_command gh
 	require_command make
-	require_command dotnet
+	require_file "$(DOTNET)"
+	require_file "$(TOOLCHAIN_VERIFY)"
+	"$(TOOLCHAIN_VERIFY)"
 	require_file "$(SOLUTION)"
 	require_file "$(PRESENTATION_PROJECT)"
 	info "Repository: $$(git rev-parse --show-toplevel)"
 	info "Branch: $$(git branch --show-current)"
-	info ".NET SDK: $$(dotnet --version)"
+	info ".NET SDK: $$("$(DOTNET)" --version)"
+	info ".NET source: $$("$(TOOLCHAIN_RESOLVER)" --source)"
 	info "Git version: $$(git --version)"
 	info "GitHub CLI: $$(gh --version | sed -n '1p')"
 	info "Commit signing: $$(git config --get commit.gpgsign || printf 'not configured')"
@@ -57,28 +75,69 @@ doctor: ## Audit the local development environment
 	info "Hooks path: $$(git config --get core.hooksPath || printf 'not configured')"
 	success "Development environment audit completed."
 
+toolchain-bootstrap: ## Install the pinned SDK into .dotnet when required
+	@arguments=()
+	if [[ -n "$(TOOLCHAIN_ARCHIVE)" ]]; then
+		arguments+=(--archive "$(TOOLCHAIN_ARCHIVE)")
+	fi
+	if [[ -n "$(TOOLCHAIN_SHA256)" ]]; then
+		arguments+=(--sha256 "$(TOOLCHAIN_SHA256)")
+	fi
+	if [[ "$(TOOLCHAIN_OFFLINE_ONLY)" == '1' ]]; then
+		arguments+=(--offline-only)
+	fi
+	if [[ "$(TOOLCHAIN_FORCE)" == '1' ]]; then
+		arguments+=(--force)
+	fi
+	"$(TOOLCHAIN_BOOTSTRAP)" "$${arguments[@]}"
+
+toolchain-check: ## Verify the SDK selected for this repository
+	@"$(TOOLCHAIN_VERIFY)"
+
+toolchain-info: ## Display SDK resolution and complete host information
+	@source "$(COMMON_SCRIPT)"
+	section "Repository .NET toolchain"
+	"$(TOOLCHAIN_RESOLVER)" --json
+	"$(DOTNET)" --info
+
+toolchain-clean: ## Remove only the repository-local SDK installation
+	@source "$(COMMON_SCRIPT)"
+	section "Cleaning repository-local .NET SDK"
+	local_install="$(ROOT)/.dotnet"
+	bootstrap_lock="$(ROOT)/.dotnet.bootstrap.lock"
+	if [[ ! -e "$$local_install" && ! -e "$$bootstrap_lock" ]]; then
+		info "No repository-local SDK installation was found."
+		exit 0
+	fi
+	rm -rf -- "$$local_install" "$$bootstrap_lock"
+	success "Repository-local SDK installation removed."
+
+toolchain-self-test: ## Test SDK resolution, bootstrap, and project integration
+	@"$(TOOLCHAIN_TESTS)"
+	@"$(TOOLCHAIN_INTEGRATION_TESTS)"
+
 hooks-install: ## Install the repository Git hooks for this worktree
 	@"$(HOOK_INSTALLER)" install
 
 hooks-check: ## Verify the repository Git hooks for this worktree
 	@"$(HOOK_INSTALLER)" check
 
-clean: ## Remove .NET build outputs
+clean: toolchain-check ## Remove .NET build outputs
 	@source "$(COMMON_SCRIPT)"
 	section "Cleaning solution"
-	dotnet clean "$(SOLUTION)" --configuration "$(CONFIGURATION)"
+	"$(DOTNET)" clean "$(SOLUTION)" --configuration "$(CONFIGURATION)"
 	success "Solution cleaned."
 
-restore: ## Restore NuGet dependencies
+restore: toolchain-check ## Restore NuGet dependencies
 	@source "$(COMMON_SCRIPT)"
 	section "Restoring dependencies"
-	dotnet restore "$(SOLUTION)"
+	"$(DOTNET)" restore "$(SOLUTION)"
 	success "Dependencies restored."
 
 build: restore ## Build the complete solution
 	@source "$(COMMON_SCRIPT)"
 	section "Building solution"
-	dotnet build "$(SOLUTION)" \
+	"$(DOTNET)" build "$(SOLUTION)" \
 		--configuration "$(CONFIGURATION)" \
 		--no-restore
 	success "Solution built."
@@ -88,7 +147,7 @@ rebuild: clean build ## Clean and rebuild the complete solution
 run: build ## Build and run the Avalonia application
 	@source "$(COMMON_SCRIPT)"
 	section "Running application"
-	dotnet run \
+	"$(DOTNET)" run \
 		--project "$(PRESENTATION_PROJECT)" \
 		--configuration "$(CONFIGURATION)" \
 		--no-build
@@ -100,14 +159,14 @@ test: build ## Build and run all unit tests
 		'"runner"[[:space:]]*:[[:space:]]*"Microsoft.Testing.Platform"' \
 		"$(ROOT)/global.json"; then
 		info "Test runner: Microsoft Testing Platform"
-		dotnet test \
+		"$(DOTNET)" test \
 			--solution "$(SOLUTION)" \
 			--configuration "$(CONFIGURATION)" \
 			--no-build \
 			--no-restore
 	else
 		info "Test runner: VSTest compatibility mode"
-		dotnet test "$(SOLUTION)" \
+		"$(DOTNET)" test "$(SOLUTION)" \
 			--configuration "$(CONFIGURATION)" \
 			--no-build \
 			--no-restore
@@ -141,13 +200,13 @@ syntax: ## Validate Bash, Python, JSON, XML, and Makefile syntax
 format: restore ## Apply .NET formatting and analyzer fixes
 	@source "$(COMMON_SCRIPT)"
 	section "Applying .NET formatting"
-	dotnet format "$(SOLUTION)" --no-restore
+	"$(DOTNET)" format "$(SOLUTION)" --no-restore
 	success "Formatting completed."
 
 format-check: restore ## Verify .NET formatting without modifying files
 	@source "$(COMMON_SCRIPT)"
 	section "Verifying .NET formatting"
-	dotnet format "$(SOLUTION)" --verify-no-changes --no-restore
+	"$(DOTNET)" format "$(SOLUTION)" --verify-no-changes --no-restore
 	success "Formatting verification completed."
 
 lint: ## Run ShellCheck on repository shell files
@@ -197,12 +256,13 @@ worktree-clean-self-test: ## Test clean and dirty worktree detection
 
 verify-fast: ## Run fast checks suitable before a commit
 	@$(MAKE) --no-print-directory \
-		branch-check staged syntax format-check
+		branch-check staged syntax toolchain-check format-check
 
 verify: ## Run the complete local quality gate
 	@$(MAKE) --no-print-directory \
-		branch-check clean restore build test \
-		syntax lint format-check audit worktree-clean-self-test \
+		branch-check toolchain-check clean restore build test \
+		syntax lint format-check audit toolchain-self-test \
+		worktree-clean-self-test \
 		signatures linear-history
 
 verify-push: ## Require a clean repository before the complete quality gate

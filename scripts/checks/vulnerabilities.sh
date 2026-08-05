@@ -10,18 +10,19 @@ REPOSITORY_ROOT="$(
 readonly REPOSITORY_ROOT
 readonly COMMON_SCRIPT="$REPOSITORY_ROOT/scripts/lib/common.sh"
 readonly SOLUTION="$REPOSITORY_ROOT/Calcufolio.slnx"
+readonly DOTNET="$REPOSITORY_ROOT/scripts/toolchain/dotnet.sh"
 
 # shellcheck disable=SC1090
 source "$COMMON_SCRIPT"
 
 section "Dependency vulnerability audit"
 
-dotnet restore "$SOLUTION" \
+"$DOTNET" restore "$SOLUTION" \
     -p:NuGetAudit=true \
     -p:NuGetAuditMode=all
 
 mapfile -t project_files < <(
-    dotnet sln "$SOLUTION" list | awk '/\.csproj$/ { print }'
+    "$DOTNET" sln "$SOLUTION" list | awk '/\.csproj$/ { print }'
 )
 
 ((${#project_files[@]} > 0)) ||
@@ -30,7 +31,7 @@ mapfile -t project_files < <(
 for project_file in "${project_files[@]}"; do
     info "Auditing project: $project_file"
 
-    dotnet package list \
+    "$DOTNET" package list \
         --project "$REPOSITORY_ROOT/$project_file" \
         --include-transitive \
         --vulnerable \

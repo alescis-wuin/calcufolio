@@ -289,6 +289,29 @@ class PatchWorkflowTests(unittest.TestCase):
                 stat.S_IXUSR,
             )
 
+        toolchain_verifier = (
+            repository /
+            "scripts/toolchain/verify-dotnet.sh"
+        )
+        toolchain_verifier.parent.mkdir(
+            parents=True,
+        )
+        toolchain_verifier.write_text(
+            "\n".join(
+                [
+                    "#!/usr/bin/env bash",
+                    "set -Eeuo pipefail",
+                    "exit 0",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        toolchain_verifier.chmod(
+            toolchain_verifier.stat().st_mode |
+            stat.S_IXUSR,
+        )
+
         self._git(
             repository,
             "add",
@@ -297,6 +320,7 @@ class PatchWorkflowTests(unittest.TestCase):
             "scripts/patch/lib/logging.sh",
             "scripts/patch/manual_process.py",
             "scripts/patch/patch_tool.py",
+            "scripts/toolchain/verify-dotnet.sh",
         )
         self._git(
             repository,
